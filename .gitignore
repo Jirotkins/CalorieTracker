@@ -1,2 +1,4 @@
 todays_meals
 *.db
+.env
+venv
