@@ -1,0 +1,75 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table food {
+  id integer [primary key]
+  user_id integer [null] // POKUD JE NULL = Globální databáze. POKUD MÁ ID = Vlastní jídlo uživatele.
+  name varchar
+  barcode varchar
+  photo_url varchar [null]
+  calories_per_100g integer
+  fat_per_100g float
+  saturates_per_100g float
+  carbs_per_100g float
+  sugar_per_100g float
+  protein_per_100g float
+  salt_per_100g float
+}
+
+Table users {
+  id integer [primary key]
+  username varchar [unique]
+  password varchar
+  daily_calories_goal integer
+  daily_fat_goal float
+  daily_saturates_goal float
+  daily_carbs_goal float
+  daily_sugar_goal float
+  daily_protein_goal float
+  daily_salt_goal float
+}
+
+Table meal_log {
+  id integer [primary key]
+  user_id integer
+  food_id integer [null]
+  recipe_id integer [null]
+  date_consumed datetime
+  meal_type varchar
+  amount_grams integer [null]
+}
+
+Table recipes {
+  id integer [primary key]
+  user_id integer
+  name varchar
+  photo_url varchar [null]
+}
+
+Table recipe_ingredients {
+  id integer [primary key]
+  recipe_id integer
+  food_id integer
+  amount_grams integer
+}
+
+Table stores {
+  id integer [primary key]
+  name varchar [unique]
+}
+
+Table food_stores {
+  id integer [primary key]
+  food_id integer
+  store_id integer
+}
+
+Ref: meal_log.user_id > users.id
+Ref: meal_log.food_id > food.id
+Ref: recipes.user_id > users.id
+Ref: recipe_ingredients.recipe_id > recipes.id
+Ref: recipe_ingredients.food_id > food.id
+Ref: meal_log.recipe_id > recipes.id
+Ref: food_stores.food_id > food.id
+Ref: food_stores.store_id > stores.id
+Ref: food.user_id > users.id
