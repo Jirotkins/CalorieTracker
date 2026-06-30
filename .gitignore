@@ -2,3 +2,4 @@ todays_meals
 *.db
 .env
 venv
+__pycache__
