@@ -13,7 +13,8 @@ def log_meal(
     meal_type: str, # Např. "Snídaně", "Oběd"
     food_id: int | None = None,
     recipe_id: int | None = None,
-    amount_grams: int | None = None
+    amount_grams: int | None = None,
+    date_consumed: datetime | None = None
 ) -> MealLog:
     """Zaznamená snědené jídlo nebo recept do deníčku."""
     new_log = MealLog(
@@ -23,7 +24,9 @@ def log_meal(
         meal_type=meal_type,
         amount_grams=amount_grams,
     )
-
+    if date_consumed:
+        new_log.date_consumed = date_consumed
+    
     session.add(new_log)
     session.commit()
     session.refresh(new_log)
