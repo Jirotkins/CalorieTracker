@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import select
+from datetime import datetime, date
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from models.meal_log import MealLog
 
@@ -59,3 +59,12 @@ def delete_meal_log(session: Session, log_id: int) -> bool:
     session.delete(meal_log)
     session.commit()
     return True
+
+def get_logs_by_date(session: Session, user_id: int, target_date: date) -> list[MealLog]:
+    """Vrátí všechna jídla snědená v jeden konkrétní den (ignoruje hodiny a minuty)."""
+    
+    query = select(MealLog).where(
+        MealLog.user_id == user_id,
+        func.date(MealLog.date_consumed) == target_date
+    )
+    return list(session.scalars(query).all())

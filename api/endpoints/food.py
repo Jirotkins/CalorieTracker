@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from core.database import SessionLocal
 import crud.food
-from schemas.food import FoodCreate, FoodResponse
+from schemas.food import FoodCreate, FoodResponse, FoodUpdate
 
 router = APIRouter()
 
@@ -38,3 +38,28 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db)):
 def get_global_catalog(db: Session = Depends(get_db)):
     """Vrátí všechna jídla z globálního katalogu."""
     return crud.food.get_global_catalog(db)
+
+# Metoda PUT k úpravě existujících dat
+@router.put("/{food_id}", response_model=FoodResponse)
+def update_food(food_id: int, food_data: FoodUpdate, db: Session = Depends(get_db)):
+    """Upraví existující jídlo v katalogu."""
+    
+    # Pošle jen upravená data od uživatele
+    update_data = food_data.model_dump(exclude_unset=True)
+    
+    updated_food = crud.food.update_food(db, food_id, **update_data)
+    if not updated_food:
+        raise HTTPException(status_code=404, detail="Jídlo nebylo nalezeno")
+        
+    return updated_food
+
+
+# Metoda DELETE na smazání dat
+@router.delete("/{food_id}")
+def delete_food(food_id: int, db: Session = Depends(get_db)):
+    """Smaže jídlo z databáze."""
+    success = crud.food.delete_food(db, food_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Jídlo nebylo nalezeno")
+        
+    return {"message": "Jídlo úspěšně smazáno"}

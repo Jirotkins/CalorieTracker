@@ -19,3 +19,10 @@ class MealLogResponse(BaseModel):
     date_consumed: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class MealLogUpdate(BaseModel):
+    meal_type: Optional[str] = None
+    food_id: Optional[int] = None
+    recipe_id: Optional[int] = None
+    amount_grams: Optional[int] = None
+    date_consumed: Optional[datetime] = None
