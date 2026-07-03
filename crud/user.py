@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from models.user import User
+from core.security import get_password_hash
 
 def get_user_by_username(session: Session, username: str) -> User | None:
     """Najde uživatele podle uživatelského jména (např. při loginu)."""
@@ -25,9 +26,10 @@ def create_user(
     salt_goal: float = 6.0
 ) -> User:
     """Vytvoří nového uživatele v databázi a vrátí jeho uložený objekt."""
+    hashed_password = get_password_hash(password)
     new_user = User(
         username=username,
-        password=password,  # (Zatím text, hashování dodělám později)
+        password=hashed_password,
         daily_calories_goal=calories_goal,
         daily_fat_goal=fat_goal,
         daily_saturates_goal=saturates_goal,

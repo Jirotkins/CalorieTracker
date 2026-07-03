@@ -9,3 +9,11 @@ engine = create_engine(
 
 # Databázové "relace" (Sessions)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Generátor databázových spojení
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
