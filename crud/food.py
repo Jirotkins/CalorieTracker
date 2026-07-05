@@ -63,7 +63,7 @@ def create_food(
     
 def get_global_catalog(session: Session) -> list[Food]:
     """Vrátí všechna jídla, která nemají majitele (tzn. globální databáze)."""
-    query = select(Food).where(Food.user_id == None)
+    query = select(Food).where(Food.user_id == None, Food.is_deleted == False)
     # Metoda .all() místo jednoho prvku vrátí celý seznam výsledků
     return list(session.scalars(query).all())
 
@@ -82,11 +82,11 @@ def update_food(session: Session, food_id: int, **kwargs) -> Food | None:
     return food
 
 def delete_food(session: Session, food_id: int) -> bool:
-    """Smaže jídlo z databáze."""
+    """Smaže jídlo z databáze (Soft delete)."""
     food = session.get(Food, food_id) # Zkratka pro hledání podle ID
     if not food:
         return False
         
-    session.delete(food)
+    food.is_deleted = True
     session.commit()
     return True

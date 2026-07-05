@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Float, ForeignKey
+from sqlalchemy import Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
@@ -32,6 +32,8 @@ class Food(Base):
     sugar_per_100g: Mapped[float] = mapped_column(Float)
     protein_per_100g: Mapped[float] = mapped_column(Float)
     salt_per_100g: Mapped[float] = mapped_column(Float)
+
+    is_deleted: Mapped[bool] = mapped_column(Boolean,default=False)
 
     # Vztahy
     user = relationship("User", back_populates="custom_foods")

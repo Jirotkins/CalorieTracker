@@ -3,3 +3,4 @@ todays_meals
 .env
 venv
 __pycache__
+.vscode/
