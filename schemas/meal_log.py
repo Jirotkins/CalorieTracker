@@ -26,3 +26,25 @@ class MealLogUpdate(BaseModel):
     recipe_id: Optional[int] = None
     amount_grams: Optional[int] = None
     date_consumed: Optional[datetime] = None
+
+class DailySummary(BaseModel):
+    total_calories: int
+    total_protein: float
+    total_carbs: float
+    total_fat: float
+    total_saturates: float
+    total_sugar: float
+    total_salt: float
+    
+    goal_calories: int
+    goal_protein: float
+    goal_carbs: float
+    goal_fat: float
+    goal_saturates: float
+    goal_sugar: float
+    goal_salt: float
+    
+    # Seznam záznamů, co dnes snědl
+    logs: list[MealLogResponse] = []
+    
+    model_config = ConfigDict(from_attributes=True)

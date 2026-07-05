@@ -37,3 +37,15 @@ class Food(Base):
     user = relationship("User", back_populates="custom_foods")
     # Díky atributu 'secondary' budeme moci snadno číst: jablko.stores
     stores = relationship("Store", secondary="food_stores")
+    portions = relationship("FoodPortion", back_populates="food", cascade="all, delete-orphan")
+
+
+class FoodPortion(Base):
+    __tablename__ = "food_portions"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    food_id: Mapped[int] = mapped_column(ForeignKey("food.id"))
+    
+    name: Mapped[str] = mapped_column(String)  # Např. "balení", "kus"
+    weight_grams: Mapped[int] = mapped_column(Integer)  # Reálná váha v (g)
+    
+    food = relationship("Food", back_populates="portions")
