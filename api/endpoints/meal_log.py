@@ -178,6 +178,9 @@ def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), curr
             daily_protein += prot
             daily_salt += salt
 
+        elif log.recipe:
+            pass
+
     return DailySummary(
         total_calories=daily_calories,
         total_fat=daily_fats,

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from .portion import PortionCreate, PortionResponse
 
 class FoodCreate(BaseModel):
     name: str
@@ -10,8 +11,10 @@ class FoodCreate(BaseModel):
     sugar_per_100g: float
     protein_per_100g: float
     salt_per_100g: float
+    photo_url: Optional[str] = None
     barcode: Optional[str] = None
     store_names: list[str] = []
+    portions: list[PortionCreate] = []
 
 # Schéma pro Obchod
 class StoreResponse(BaseModel):
@@ -32,7 +35,9 @@ class FoodResponse(BaseModel):
     sugar_per_100g: float
     protein_per_100g: float
     salt_per_100g: float
+    photo_url: Optional[str]
     stores: list[StoreResponse] = []
+    portions: list[PortionResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -46,3 +51,4 @@ class FoodUpdate(BaseModel):
     sugar_per_100g: Optional[float] = None
     protein_per_100g: Optional[float] = None
     salt_per_100g: Optional[float] = None
+    photo_url: Optional[str] = None
