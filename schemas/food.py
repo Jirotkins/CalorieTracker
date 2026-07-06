@@ -35,7 +35,7 @@ class FoodResponse(BaseModel):
     sugar_per_100g: float
     protein_per_100g: float
     salt_per_100g: float
-    photo_url: Optional[str]
+    photo_url: Optional[str] = None
     stores: list[StoreResponse] = []
     portions: list[PortionResponse] = []
 
