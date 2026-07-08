@@ -36,6 +36,7 @@ def create_food(
     salt_per_100g: float,
     user_id: int | None = None,
     barcode: str | None = None,
+    photo_url: str | None = None,
     store_names: list[str] = []
     ) -> Food:
     """Vytvoří nové jídlo a rovnou ho propojí s obchody (M:N vztah)."""
@@ -43,6 +44,7 @@ def create_food(
         name=name,
         user_id=user_id,
         barcode=barcode,
+        photo_url=photo_url,
         calories_per_100g=calories_per_100g,
         fat_per_100g=fat_per_100g,
         saturates_per_100g=saturates_per_100g,
@@ -101,3 +103,8 @@ def delete_food(session: Session, food_id: int) -> bool:
     food.is_deleted = True
     session.commit()
     return True
+
+def get_food_by_barcode(session: Session, barcode: str) -> Food | None:
+    """Najde jídlo v naší databázi podle čárového kódu."""
+    query = select(Food).where(Food.barcode == barcode, Food.is_deleted == False)
+    return session.scalar(query)

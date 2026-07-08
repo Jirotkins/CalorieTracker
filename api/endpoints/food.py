@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from core.database import SessionLocal
 import crud.food
-from schemas.food import FoodCreate, FoodResponse, FoodUpdate
+from schemas.food import FoodCreate, FoodResponse, FoodUpdate, BarcodeLookupResponse
 from api.deps import get_current_user
 from models.user import User
+from services.openfoodfacts import fetch_food_from_off
 
 router = APIRouter()
 
@@ -32,6 +33,7 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db), current_us
         salt_per_100g=food_data.salt_per_100g,
         user_id=target_user_id,
         barcode=food_data.barcode,
+        photo_url=food_data.photo_url,
         store_names=food_data.store_names
     )
     return new_food
@@ -46,6 +48,24 @@ def get_global_catalog(search: str | None = None, db: Session = Depends(get_db))
 @router.get("/me", response_model=list[FoodResponse])
 def get_my_foods(search: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return crud.food.get_user_food(session=db, user_id=current_user.id, search=search)
+
+@router.get("/barcode/{barcode}", response_model=BarcodeLookupResponse)
+def lookup_barcode(barcode: str, db: Session = Depends(get_db)):
+    """Pokusí se najít jídlo lokálně. Pokud neexistuje, zkusí to v Open Food Facts."""
+    
+    # Zkusí naši lokální databázi
+    local_food = crud.food.get_food_by_barcode(db, barcode)
+    if local_food:
+        food_response = FoodResponse.model_validate(local_food)
+        return {"found_in_our_db": True, "food": food_response}
+        
+    # Zkusí Open Food Facts
+    off_data = fetch_food_from_off(barcode)
+    if off_data:
+        return {"found_in_our_db": False, "food": off_data}
+        
+    # Neexistuje nikde
+    raise HTTPException(status_code=404, detail="Jídlo nebylo nalezeno ani u nás, ani v Open Food Facts.")
 
 # Metoda PUT k úpravě existujících dat
 @router.put("/{food_id}", response_model=FoodResponse)

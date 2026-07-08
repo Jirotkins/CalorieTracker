@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, Any
 from .portion import PortionCreate, PortionResponse
 
 class FoodCreate(BaseModel):
@@ -53,3 +53,7 @@ class FoodUpdate(BaseModel):
     protein_per_100g: Optional[float] = None
     salt_per_100g: Optional[float] = None
     photo_url: Optional[str] = None
+
+class BarcodeLookupResponse(BaseModel):
+    found_in_our_db: bool
+    food: Any # Plné FoodResponse nebo jen částečný slovník z OFF
