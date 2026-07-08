@@ -8,9 +8,11 @@ def get_recipe(session: Session, recipe_id: int) -> Recipe | None:
     """Vrátí konkrétní recept podle ID."""
     return session.get(Recipe, recipe_id)
 
-def get_user_recipes(session: Session, user_id: int) -> list[Recipe]:
+def get_user_recipes(session: Session, user_id: int, search: str | None = None) -> list[Recipe]:
     """Vrátí všechny recepty patřící konkrétnímu uživateli (bez smazaných)."""
     query = select(Recipe).where(Recipe.user_id==user_id, Recipe.is_deleted==False)
+    if search:
+        query = query.where(Recipe.name.ilike(f"%{search}%"))
     return list(session.scalars(query).all())
 
 def create_recipe(session: Session, user_id: int, recipe_data: RecipeCreate) -> Recipe:

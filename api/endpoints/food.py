@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from core.database import SessionLocal
 import crud.food
 from schemas.food import FoodCreate, FoodResponse, FoodUpdate
+from api.deps import get_current_user
+from models.user import User
 
 router = APIRouter()
 
@@ -14,10 +16,10 @@ def get_db():
     finally:
         db.close()
 
-# Metoda POST pro vytvoření jídla
 @router.post("/", response_model=FoodResponse)
-def create_food(food_data: FoodCreate, db: Session = Depends(get_db)):
-    """Vytvoří nové jídlo v katalogu."""
+def create_food(food_data: FoodCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Vytvoří nové jídlo pod aktuálně přihlášeným uživatelem."""
+    target_user_id = None if food_data.is_global else current_user.id
     new_food = crud.food.create_food(
         session=db,
         name=food_data.name,
@@ -28,6 +30,7 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db)):
         sugar_per_100g=food_data.sugar_per_100g,
         protein_per_100g=food_data.protein_per_100g,
         salt_per_100g=food_data.salt_per_100g,
+        user_id=target_user_id,
         barcode=food_data.barcode,
         store_names=food_data.store_names
     )
@@ -38,6 +41,11 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db)):
 def get_global_catalog(search: str | None = None, db: Session = Depends(get_db)):
     """Vrátí všechna jídla z globálního katalogu."""
     return crud.food.get_global_catalog(db, search=search)
+
+# Metoda GET pro získání VLASTNÍCH jídel přihlášeného uživatele
+@router.get("/me", response_model=list[FoodResponse])
+def get_my_foods(search: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return crud.food.get_user_food(session=db, user_id=current_user.id, search=search)
 
 # Metoda PUT k úpravě existujících dat
 @router.put("/{food_id}", response_model=FoodResponse)

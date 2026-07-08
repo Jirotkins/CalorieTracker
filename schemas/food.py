@@ -4,6 +4,7 @@ from .portion import PortionCreate, PortionResponse
 
 class FoodCreate(BaseModel):
     name: str
+    is_global: bool = False
     calories_per_100g: int
     fat_per_100g: float
     saturates_per_100g: float

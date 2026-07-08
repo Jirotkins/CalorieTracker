@@ -70,6 +70,14 @@ def get_global_catalog(session: Session, search: str | None = None) -> list[Food
     # Metoda .all() místo jednoho prvku vrátí celý seznam výsledků
     return list(session.scalars(query).all())
 
+def get_user_food(session: Session, user_id: int, search: str | None = None) -> list[Food]:
+    """Vrátí všechna jídla konkrétního uživatele, které nejsou v glob. katalogu."""
+    query = select(Food).where(Food.user_id == user_id, Food.is_deleted == False)
+
+    if search:
+        query = query.where(Food.name.ilike(f"%{search}%"))
+    return list(session.scalars(query).all())
+
 def update_food(session: Session, food_id: int, **kwargs) -> Food | None:
     """Upraví hodnoty jídla. Předá jen to, co chce změnit."""
     food = get_food(session, food_id)

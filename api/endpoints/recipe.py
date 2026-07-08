@@ -31,9 +31,9 @@ def get_recipe(recipe_id: int, db: Session = Depends(get_db)):
     return recipe
 
 @router.get("/", response_model=list[RecipeResponse])
-def get_my_recipes(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_my_recipes(search: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Vrátí všechny recepty patřící aktuálně přihlášenému uživateli."""
-    return crud.recipe.get_user_recipes(session=db, user_id=current_user.id)
+    return crud.recipe.get_user_recipes(session=db, user_id=current_user.id, search=search)
 
 @router.put("/{recipe_id}", response_model=RecipeResponse)
 def update_recipe(recipe_id: int, recipe_data: RecipeUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
