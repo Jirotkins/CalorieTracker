@@ -35,9 +35,9 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db)):
 
 # Metoda GET pro získání všech jídel
 @router.get("/", response_model=list[FoodResponse])
-def get_global_catalog(db: Session = Depends(get_db)):
+def get_global_catalog(search: str | None = None, db: Session = Depends(get_db)):
     """Vrátí všechna jídla z globálního katalogu."""
-    return crud.food.get_global_catalog(db)
+    return crud.food.get_global_catalog(db, search=search)
 
 # Metoda PUT k úpravě existujících dat
 @router.put("/{food_id}", response_model=FoodResponse)

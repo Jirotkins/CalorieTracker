@@ -61,9 +61,12 @@ def create_food(
     session.refresh(new_food)
     return new_food
     
-def get_global_catalog(session: Session) -> list[Food]:
+def get_global_catalog(session: Session, search: str | None = None) -> list[Food]:
     """Vrátí všechna jídla, která nemají majitele (tzn. globální databáze)."""
     query = select(Food).where(Food.user_id == None, Food.is_deleted == False)
+
+    if search:
+        query = query.where(Food.name.ilike(f"%{search}%"))
     # Metoda .all() místo jednoho prvku vrátí celý seznam výsledků
     return list(session.scalars(query).all())
 
