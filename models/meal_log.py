@@ -12,6 +12,7 @@ class MealLog(Base):
     food_id: Mapped[int | None] = mapped_column(ForeignKey("food.id"), nullable=True)
     recipe_id: Mapped[int | None] = mapped_column(ForeignKey("recipes.id"), nullable=True)
     portion_id: Mapped[int | None] = mapped_column(ForeignKey("food_portions.id"), nullable=True)
+    recipe_portion_id: Mapped[int | None] = mapped_column(ForeignKey("recipe_portions.id"), nullable=True)
     
     date_consumed: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     meal_type: Mapped[str] = mapped_column(String) 
@@ -21,3 +22,4 @@ class MealLog(Base):
     food = relationship("Food")
     recipe = relationship("Recipe")
     portion = relationship("FoodPortion")
+    recipe_portion = relationship("RecipePortion")

@@ -15,6 +15,7 @@ def log_meal(
     recipe_id: int | None = None,
     amount_grams: int | None = None,
     portion_id: int | None = None,
+    recipe_portion_id: int | None = None,
     date_consumed: datetime | None = None
 ) -> MealLog:
     """Zaznamená snědené jídlo nebo recept do deníčku."""
@@ -24,7 +25,8 @@ def log_meal(
         recipe_id=recipe_id,
         meal_type=meal_type,
         amount_grams=amount_grams,
-        portion_id=portion_id
+        portion_id=portion_id,
+        recipe_portion_id=recipe_portion_id
     )
     if date_consumed:
         new_log.date_consumed = date_consumed

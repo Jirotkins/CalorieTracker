@@ -9,6 +9,7 @@ class MealLogCreate(BaseModel):
     amount_grams: Optional[int] = None
     date_consumed: Optional[datetime] = None
     portion_id: Optional[int] = None
+    recipe_portion_id: Optional[int] = None
 
 class MealLogResponse(BaseModel):
     id: int
@@ -18,6 +19,7 @@ class MealLogResponse(BaseModel):
     meal_type: str
     amount_grams: Optional[int]
     portion_id: Optional[int]
+    recipe_portion_id: Optional[int]
     date_consumed: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -28,10 +30,11 @@ class MealLogUpdate(BaseModel):
     recipe_id: Optional[int] = None
     amount_grams: Optional[int] = None
     date_consumed: Optional[datetime] = None
+    portion_id: Optional[int] = None
+    recipe_portion_id: Optional[int] = None
 
 class LogItemResponse(BaseModel):
     id: int
-    food_name: str
     amount_grams: int
     calories: int
     fat: float
@@ -40,6 +43,8 @@ class LogItemResponse(BaseModel):
     sugar: float
     protein: float
     salt: float
+    food_name: Optional[str] = None
+    recipe_name: Optional[str] = None
     portion_name: Optional[str] = None
 
 class MealGroupSummary(BaseModel):

@@ -29,6 +29,7 @@ def log_meal(log_data: MealLogCreate, db: Session = Depends(get_db), current_use
         recipe_id=log_data.recipe_id,
         amount_grams=log_data.amount_grams,
         portion_id=log_data.portion_id,
+        recipe_portion_id=log_data.recipe_portion_id,
         date_consumed=log_data.date_consumed
     )
     return new_log
@@ -179,7 +180,53 @@ def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), curr
             daily_salt += salt
 
         elif log.recipe:
-            pass
+            if log.recipe_portion:
+                grams = log.recipe_portion.weight_grams
+                portion_name = log.recipe_portion.name
+            else:
+                grams = log.amount_grams or 100
+                portion_name = None
+
+            multiplier = grams / 100.0
+            cal = int(log.recipe.calories_per_100g * multiplier)
+            fat = log.recipe.fat_per_100g * multiplier
+            sat = log.recipe.saturates_per_100g * multiplier
+            carb = log.recipe.carbs_per_100g * multiplier
+            sug = log.recipe.sugar_per_100g * multiplier
+            prot = log.recipe.protein_per_100g * multiplier
+            salt = log.recipe.salt_per_100g * multiplier
+
+            item = LogItemResponse(
+                id=log.id,
+                food_name=None,
+                recipe_name=log.recipe.name,
+                amount_grams=grams,
+                calories=cal,
+                fat=fat,
+                saturates=sat,
+                carbs=carb,
+                sugar=sug,
+                protein=prot,
+                salt=salt,
+                portion_name=portion_name
+            )
+
+            groups[log.meal_type].total_calories += cal
+            groups[log.meal_type].total_fat += fat
+            groups[log.meal_type].total_saturates += sat
+            groups[log.meal_type].total_carbs += carb
+            groups[log.meal_type].total_sugar += sug
+            groups[log.meal_type].total_protein += prot
+            groups[log.meal_type].total_salt += salt
+            groups[log.meal_type].items.append(item)
+
+            daily_calories += cal
+            daily_fats += fat
+            daily_saturates += sat
+            daily_carbs += carb
+            daily_sugar += sug
+            daily_protein += prot
+            daily_salt += salt
 
     return DailySummary(
         total_calories=daily_calories,
