@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import user, food, meal_log, auth, recipe
 from api.deps import get_current_user
 
@@ -7,6 +8,15 @@ app = FastAPI(
     title="CalorieTracker API",
     description="API pro sledování kalorií",
     version="1.0.0"
+)
+
+# CORS pro komunikaci s frontendem
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 app.include_router(user.router, prefix="/users", tags=["Users"])
