@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../services/api';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 
 export default function Login() {
     // Definování stavu dat (Observer)
@@ -38,7 +39,9 @@ export default function Login() {
     };
 
     return (
-        <main className="min-h-dvh flex items-center justify-center p-4">
+        <main className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
+
+            <ThemeToggle className="absolute top-6 right-6" />
 
             <section className="w-full max-w-md bg-surface p-8 rounded-2xl shadow-xl border border-surface-hover">
 
