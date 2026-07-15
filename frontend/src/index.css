@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+@theme {
+    --color-surface: var(--surface);
+    --color-surface-hover: var(--surface-hover);
+    --color-text-main: var(--text-main);
+    --color-text-muted: var(--text-muted);
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+}
+
+/* Výchozí stav: světlý režim */
+:root {
+    --surface: #ffffff;         /* Karty formulářů */
+    --surface-hover: #f8fafc;   /* Pozadí stránky */
+    --text-main: #1e293b;       /* Hlavní texty */
+    --text-muted: #64748b;      /* Podtitulky */
+    --brand: #a78bfa;           /* Hlavní barva aplikace */
+    --brand-hover: #8b5cf6;     /* Hlavní hover barva aplikace */
+}
+
+/* Tmavý režim */
+.dark {
+    --surface: #1e293b;         /* Karty formulářů */
+    --surface-hover: #0f172a;   /* Pozadí stránky */
+    --text-main: #f8fafc;       /* Hlavní texty */
+    --text-muted: #94a3b8;      /* Podtitulky */
+    --brand: #a78bfa;           /* Hlavní barva aplikace */
+    --brand-hover: #c4b5fd;     /* Hlavní hover barva aplikace */
+}
+
+/* Globální základ a animace */
+body {
+  background-color: var(--surface-hover); 
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
