@@ -20,7 +20,7 @@ export function Input({ label, id, ...props }: InputProps) {
                 className="w-full px-4 py-3 rounded-xl bg-surface-hover border border-transparent 
                 focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none transition-all 
                 duration-200 text-text-main placeholder-text-muted/50"
-                {...props} 
+                {...props}
             />
         </div>
     );

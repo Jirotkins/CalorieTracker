@@ -10,14 +10,14 @@ export function Button({ isLoading, children, className, disabled, ...props }: B
     const isDisabled = isLoading || disabled;
 
     return (
-        <button 
+        <button
             disabled={isDisabled}
             className={`
                 w-full py-3 px-4 rounded-xl font-semibold text-white flex justify-center items-center gap-2
                 bg-brand hover:bg-brand-hover 
                 transition-all duration-300 ease-out
-                ${isDisabled 
-                    ? 'opacity-70 cursor-not-allowed' 
+                ${isDisabled
+                    ? 'opacity-70 cursor-not-allowed'
                     : 'hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/40 active:translate-y-0 active:scale-95'
                 }
                 ${className || ''} 

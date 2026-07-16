@@ -8,7 +8,7 @@ export function useTheme() {
         if (savedTheme) {
             return savedTheme === 'dark';
         }
-        
+
         // Nastavení ze systému
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
     });
@@ -16,7 +16,7 @@ export function useTheme() {
     // Reakce na změnu
     useEffect(() => {
         const root = window.document.documentElement; // Hlavní <html> tag v prohlížeči
-        
+
         if (isDarkMode) {
             root.classList.add('dark'); // Přidá třídu -> aktivuje Tmavý režim v index.css
             localStorage.setItem('theme', 'dark'); // Uloží volbu do localStorage
