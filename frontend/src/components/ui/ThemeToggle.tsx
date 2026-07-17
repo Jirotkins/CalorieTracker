@@ -1,4 +1,5 @@
 import { useTheme } from '../../hooks/useTheme';
+import { Moon, Sun } from 'lucide-react';
 
 // Komponenta může přijmout extra CSS třídy zvenku
 interface ThemeToggleProps {
@@ -14,25 +15,23 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
             onClick={toggleTheme}
             // Spojení vzhledu s požadavky zvenku
             className={`
-                inline-flex h-8 w-16 items-center rounded-full transition-colors 
-                duration-300 focus:outline-none focus:ring-2 focus:ring-brand/50
-                ${isDarkMode ? 'bg-brand' : 'bg-slate-300'} 
+                inline-flex h-8 w-16 items-center rounded-full transition-colors duration-300
+                ${isDarkMode ? 'bg-brand' : 'bg-yellow-200'} 
                 ${className}
             `}
             aria-label='Přepnout motiv'
         >
-            {/* "Kolečko" switche: bílé, s ikonou uvnitř, posouvá se zleva doprava */}
+            {/* Ikony, které se posouvají zleva doprava podle motivu */}
             <span
-                className={`
-                    inline-flex h-6 w-6 transform items-center justify-center 
-                    rounded-full bg-white shadow-md transition-transform duration-300
-                    ${isDarkMode ? 'translate-x-9' : 'translate-x-1'}
+                className={`flex items-center justify-center duration-300 transition-transform text-slate-300 dark:text-slate-600
+                    ${isDarkMode ? 'translate-x-8.5' : 'translate-x-1.5'}
                 `}
             >
-                {/* Ikona uvnitř kolečka */}
-                <span className="text-xs leading-none select-none">
-                    {isDarkMode ? '🌙' : '☀️'}
-                </span>
+                {isDarkMode ? (
+                    <Moon size={22} strokeWidth={1.5} />
+                ) : (
+                    <Sun size={22} strokeWidth={1.5} />
+                )}
             </span>
         </button>
     );

@@ -40,7 +40,9 @@ export function MiniCircularProgress({
             <span className="text-sm font-bold text-text-main">{label}</span>
             
             {/* Zkonzumované gramy */}
-            <span className="text-sm font-medium text-text-main">{data.consumed}g</span>
+            <span className="text-sm font-medium text-text-muted">
+                {data.consumed} / {data.goal}g
+            </span>
 
             {/* Kolečko s procenty uvnitř */}
             <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
@@ -52,7 +54,7 @@ export function MiniCircularProgress({
                 >
                     {/* Podkladový šedý kruh */}
                     <circle
-                        className="text-surface-hover dark:text-surface stroke-current"
+                        className="text-surface-hover stroke-current"
                         strokeWidth={strokeWidth}
                         fill="transparent"
                         r={radius}
@@ -83,7 +85,7 @@ export function MiniCircularProgress({
             </div>
 
             {/* Cílové gramy */}
-            <span className="text-xs text-text-muted">{data.goal}g</span>
+            
         </div>
     );
 }

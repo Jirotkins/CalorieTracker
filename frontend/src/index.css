@@ -22,7 +22,7 @@
 :root {
     --surface: #ffffff;
     /* Karty formulářů */
-    --surface-hover: #f8fafc;
+    --surface-hover: #e7e8e9;
     /* Pozadí stránky */
     --text-main: #1e293b;
     /* Hlavní texty */
@@ -36,17 +36,17 @@
     /* Makra */
     --fats: #fce880;
     --saturates: #edb187;
-    --carbs: #83bbfb;
-    --sugar: #93f6cd;
-    --protein: #fc7979;
-    --salt: #777778;
+    --carbs: #fc7979;
+    --sugar: #f8a8e7;
+    --protein: #83bbfb;
+    --salt: #919192;
 }
 
 /* Tmavý režim */
 .dark {
     --surface: #1e293b;
     /* Karty formulářů */
-    --surface-hover: #0f172a;
+    --surface-hover: #1c1e22;
     /* Pozadí stránky */
     --text-main: #f8fafc;
     /* Hlavní texty */
@@ -58,12 +58,12 @@
     /* Hlavní hover barva aplikace */
 
     /* Makra */
-    --fats: #fce880;       
-    --saturates: #edb187;  
-    --carbs: #83bbfb;      
-    --sugar: #93f6cd;
-    --protein: #fc7979;    
-    --salt: #777778;
+    --fats: #fce880;
+    --saturates: #edb187;
+    --carbs: #fc6b6b;
+    --sugar: #e298d2;
+    --protein: #64abfc;
+    --salt: #adadad;
 }
 
 /* Globální základ a animace */
