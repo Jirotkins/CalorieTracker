@@ -1,12 +1,21 @@
 @import "tailwindcss";
 
 @theme {
+    /* Základní barvy aplikace */
     --color-surface: var(--surface);
     --color-surface-hover: var(--surface-hover);
     --color-text-main: var(--text-main);
     --color-text-muted: var(--text-muted);
     --color-brand: var(--brand);
     --color-brand-hover: var(--brand-hover);
+
+    /* Barvy pro makra */
+    --color-fats: var(--fats);
+    --color-saturates: var(--saturates);
+    --color-carbs: var(--carbs);
+    --color-sugar: var(--sugar);
+    --color-protein: var(--protein);
+    --color-salt: var(--salt);
 }
 
 /* Výchozí stav: světlý režim */
@@ -23,6 +32,14 @@
     /* Hlavní barva aplikace */
     --brand-hover: #8b5cf6;
     /* Hlavní hover barva aplikace */
+    
+    /* Makra */
+    --fats: #fce880;
+    --saturates: #edb187;
+    --carbs: #83bbfb;
+    --sugar: #93f6cd;
+    --protein: #fc7979;
+    --salt: #777778;
 }
 
 /* Tmavý režim */
@@ -39,6 +56,14 @@
     /* Hlavní barva aplikace */
     --brand-hover: #c4b5fd;
     /* Hlavní hover barva aplikace */
+
+    /* Makra */
+    --fats: #fce880;       
+    --saturates: #edb187;  
+    --carbs: #83bbfb;      
+    --sugar: #93f6cd;
+    --protein: #fc7979;    
+    --salt: #777778;
 }
 
 /* Globální základ a animace */

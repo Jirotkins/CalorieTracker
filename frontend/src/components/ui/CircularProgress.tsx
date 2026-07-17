@@ -55,8 +55,7 @@ export function CircularProgress({
 
                 {/* Barevný kruh (vyplněný podle progresu) */}
                 <circle
-                    // Pokud přečerpá, změní barvu na červenou
-                    className={`${isOver ? 'text-red-500' : 'text-brand'} stroke-current transition-all duration-1000 ease-out`}
+                    className={"text-brand stroke-current transition-all duration-1000 ease-out"}
                     strokeWidth={strokeWidth}
                     strokeLinecap="round" // Zakulacené konce čáry
                     fill="transparent"
