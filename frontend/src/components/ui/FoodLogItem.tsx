@@ -12,9 +12,7 @@ export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }:
     return (
         <div 
             onClick={onClickItem}
-            // Zákaz výběru textu (select-none) a "active" stavy pro vizuální feedback při dotyku
-            className="flex items-center justify-between p-4 bg-surface active:bg-slate-100 dark:active:bg-slate-800 
-            transition-colors cursor-pointer select-none border-b border-slate-100 dark:border-slate-800 last:border-0"
+            className="flex items-center justify-between p-4 bg-surface select-none"
         >
             
             <div className="flex items-center gap-4 flex-1 overflow-hidden">
@@ -37,7 +35,6 @@ export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }:
                 </div>
             </div>
             
-            {/* Větší touch-target pro iPhone (p-2 dává větší plochu na tapnutí) */}
             <button 
                 onClick={(e) => {
                     e.stopPropagation();

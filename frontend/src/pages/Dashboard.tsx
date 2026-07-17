@@ -1,10 +1,10 @@
 import { CircularProgress } from "../components/ui/CircularProgress";
 import { MacroOverview } from "../components/ui/MacroOverview";
-import { MOCK_DAILY_NUTRITION } from "../types/nutrition";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
+import { DailyMealLog } from "../components/ui/DailyMealLog";
 
-import { FoodLogItem } from "../components/ui/FoodLogItem";
-import { MealSection } from "../components/ui/MealSection";
+import { MOCK_DAILY_NUTRITION } from "../types/nutrition";
+import { MOCK_DAILY_MEALS } from "../types/meal";
 
 export default function Dashboard() {
     return (
@@ -24,33 +24,7 @@ export default function Dashboard() {
             {/* Přehled makroživin */}
             <MacroOverview nutritionData={MOCK_DAILY_NUTRITION} />
 
-            {/* Jídelníček - Snídaně */}
-            <MealSection title="Snídaně" totalCalories={355}>
-                <FoodLogItem 
-                    name="Ovesná kaše s proteinem a ovocem" 
-                    grams={60} 
-                    calories={250} 
-                />
-                <FoodLogItem 
-                    name="Banán" 
-                    grams={120} 
-                    calories={105} 
-                />
-            </MealSection>
-            {/* Jídelníček - Oběd */}
-            <MealSection title="Oběd" totalCalories={1048}>
-                <FoodLogItem 
-                    name="Hovězí burger s bulkou" 
-                    grams={300} 
-                    calories={1048} 
-                />
-            </MealSection>
-            {/* Jídelníček - Svačina (Zatím prázdná) */}
-            <MealSection title="Svačina" totalCalories={0}>
-                <div className="p-4 text-center text-sm text-text-muted">
-                    Zatím jsi nepřidal žádné jídlo.
-                </div>
-            </MealSection>
+            <DailyMealLog mealsData={MOCK_DAILY_MEALS} />
 
         </main>
     );
