@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { CircularProgress } from "../components/ui/CircularProgress";
 import { MacroOverview } from "../components/ui/MacroOverview";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
 import { DailyMealLog } from "../components/ui/DailyMealLog";
+import { DateStepper } from "../components/ui/DateStepper";
 
 import { MOCK_DAILY_NUTRITION } from "../types/nutrition";
 import { MOCK_DAILY_MEALS } from "../types/meal";
 
 export default function Dashboard() {
+    // Stav aktuálně zobrazeného dne, výchozí je dnešek
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
     return (
         <main className="p-4 flex flex-col gap-6 max-w-md mx-auto pb-10">
 
@@ -15,6 +20,8 @@ export default function Dashboard() {
             <header className="flex justify-center">
                 <h1 className="text-2xl font-bold text-text-main">Přehled dne</h1>
             </header>
+
+            <DateStepper date={selectedDate} onChange={setSelectedDate} />
             
             {/* Hlavní kolečko pro kalorie */}
             <div className="flex justify-center my-4">
@@ -24,6 +31,7 @@ export default function Dashboard() {
             {/* Přehled makroživin */}
             <MacroOverview nutritionData={MOCK_DAILY_NUTRITION} />
 
+            {/* Přehled záznamů pro jeden den */}
             <DailyMealLog mealsData={MOCK_DAILY_MEALS} />
 
         </main>
