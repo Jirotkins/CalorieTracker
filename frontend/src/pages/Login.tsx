@@ -3,6 +3,8 @@ import { api } from '../services/api';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate, Navigate } from 'react-router-dom';
 
 export default function Login() {
     // Definování stavu dat (Observer)
@@ -10,6 +12,8 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false); // Načítací kolečko
     const [error, setError] = useState('');
+    const { login, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
 
     // Logika přihlašování
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -24,9 +28,8 @@ export default function Login() {
             const response = await api.post('/login', formData, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
-            // Uložení tajného klíče
-            localStorage.setItem('token', response.data.access_token);
-            alert('Vítej');
+            await login(response.data.access_token);
+            navigate('/dashboard');
         }
         catch (err) {
             // Nastavení chybové hlášky pokud Axios vyhodí chybu
@@ -37,6 +40,11 @@ export default function Login() {
             setIsLoading(false);
         }
     };
+
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
 
     return (
         <main className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">

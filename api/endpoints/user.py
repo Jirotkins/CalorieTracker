@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from core.database import SessionLocal
 import crud.user
 from schemas.user import UserCreate, UserResponse
+from api.deps import get_current_user
+from models.user import User
 
 
 router = APIRouter()
@@ -15,6 +17,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Endpoint pro načtení profilu aktuálního uživatele
+@router.get("/me", response_model=UserResponse)
+def read_user_me(current_user: User = Depends(get_current_user)):
+    """
+    Vrátí profil aktuálně přihlášeného uživatele podle JWT tokenu.
+    """
+    return current_user
 
 # Metoda POST pro vytvoření uživatele
 @router.post("/", response_model=UserResponse)
