@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Search, Plus } from "lucide-react";
 import { api } from "../services/api";
 import { type Food } from "../types/food";
 import { FoodCard } from "../components/ui/FoodCard";
+import { AddFoodMenu } from "../components/ui/AddFoodMenu";
+import { SearchBar } from "../components/ui/SearchBar";
+import { Tabs } from "../components/ui/Tabs";
 
 type Tab = "global" | "my";
 
@@ -44,41 +46,25 @@ export default function Foods() {
         <main className="w-full p-4 flex flex-col gap-6 max-w-md mx-auto mt-4 pb-24">
 
             {/* Přepínač (Tabs) + Tlačítko Přidat */}
-            <div className="flex gap-2 bg-surface p-1 rounded-full border border-surface-hover">
-                <button
-                    onClick={() => setActiveTab("global")}
-                    className={`flex-1 py-3 text-sm font-semibold rounded-full transition-all ${activeTab === "global" ? "bg-brand text-white shadow-md" : "text-text-muted"
-                        }`}
-                >
-                    Globální
-                </button>
-                <button
-                    onClick={() => setActiveTab("my")}
-                    className={`flex-1 py-3 text-sm font-semibold rounded-full transition-all ${activeTab === "my" ? "bg-brand text-white shadow-md" : "text-text-muted"
-                        }`}
-                >
-                    Moje jídla
-                </button>
+            <div className="flex gap-2 items-center">
+                <Tabs
+                    options={[
+                        { id: "global", label: "Globální" },
+                        { id: "my", label: "Moje jídla" }
+                    ]}
+                    activeTab={activeTab}
+                    onChange={(id) => setActiveTab(id as Tab)}
+                />
 
-                {/* Tlačítko pro přidání nového jídla */}
-                <button
-                    className="bg-surface-hover text-brand p-2 aspect-square rounded-full flex items-center justify-center hover:bg-brand hover:text-white transition-colors"
-                >
-                    <Plus size={24} strokeWidth={2.5} />
-                </button>
+                <AddFoodMenu />
             </div>
 
             {/* Vyhledávací pole (Search bar) */}
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={20} />
-                <input
-                    type="text"
-                    placeholder="Hledat jídlo..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-surface py-4 pl-12 pr-4 rounded-3xl border border-surface-hover focus:outline-none focus:border-brand text-text-main transition-colors"
-                />
-            </div>
+            <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Hledat jídlo..."
+            />
 
             {/* Výpis načtených jídel */}
             <div className="flex flex-col gap-3">

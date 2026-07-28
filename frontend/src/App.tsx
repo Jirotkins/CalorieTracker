@@ -3,6 +3,8 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Foods from './pages/Foods'
 import Settings from './pages/Settings'
+import AddFood from './pages/AddFood'
+
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { MainLayout } from './components/layout/MainLayout'
@@ -21,6 +23,9 @@ export default function App() {
             <Route path='/foods' element={<Foods />} />
             <Route path='/settings' element={<Settings />} />
           </Route>
+
+          {/* Chráněná bez spodního menu */}
+          <Route path='/foods/new' element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
 
         </Routes>
       </BrowserRouter>
