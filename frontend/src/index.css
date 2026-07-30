@@ -32,7 +32,7 @@
     /* Hlavní barva aplikace */
     --brand-hover: #8b5cf6;
     /* Hlavní hover barva aplikace */
-    
+
     /* Makra */
     --fats: #fce880;
     --saturates: #edb187;
@@ -71,4 +71,20 @@ body {
     background-color: var(--surface-hover);
     color: var(--text-main);
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@keyframes laser {
+
+    0%,
+    100% {
+        top: 0;
+    }
+
+    50% {
+        top: 100%;
+    }
+}
+
+.animate-laser {
+    animation: laser 3s ease-in-out infinite;
 }

@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Foods from './pages/Foods'
 import Settings from './pages/Settings'
 import AddFood from './pages/AddFood'
+import BarcodeScanner from './pages/BarcodeScanner'
 
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -26,6 +27,7 @@ export default function App() {
 
           {/* Chráněná bez spodního menu */}
           <Route path='/foods/new' element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+          <Route path='/scanner' element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
 
         </Routes>
       </BrowserRouter>

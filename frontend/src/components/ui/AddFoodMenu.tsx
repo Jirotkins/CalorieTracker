@@ -51,9 +51,9 @@ export function AddFoodMenu() {
                     <button
                         onClick={() => {
                             setIsOpen(false);
-                            alert("Skenování čárových kódů přidáme později!");
+                            navigate("/scanner");
                         }}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-surface-hover text-text-main hover:bg-brand/10 hover:text-brand transition-colors text-left"
+                        className="flex items-center gap-4 p-4 rounded-3xl bg-surface-hover text-text-main hover:bg-brand/10 hover:text-brand transition-colors text-left"
                     >
                         <div className="bg-surface p-3 rounded-xl shadow-sm">
                             <Barcode size={24} />
@@ -70,7 +70,7 @@ export function AddFoodMenu() {
                             setIsOpen(false);
                             navigate("/foods/new");
                         }}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-brand text-white shadow-md active:scale-95 transition-all text-left"
+                        className="flex items-center gap-4 p-4 rounded-3xl bg-brand text-white shadow-md active:scale-95 transition-all text-left"
                     >
                         <div className="bg-white/20 p-3 rounded-xl">
                             <PenLine size={24} />

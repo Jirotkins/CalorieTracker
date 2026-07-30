@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, Camera } from "lucide-react";
 import { api } from "../services/api";
 import { NutrientRow } from "../components/ui/NutrientRow";
@@ -7,19 +7,23 @@ import { Switch } from "../components/ui/Switch";
 
 export default function AddFood() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const prefilledData = location.state?.prefilledData;
     const [isLoading, setIsLoading] = useState(false);
 
-    // Stav formuláře (všechny položky jako prázdné stringy, ať je input čistý)
+    // Stav formuláře
     const [formData, setFormData] = useState({
-        name: "",
+        name: prefilledData?.name || "",
         is_global: true,
-        calories_per_100g: "",
-        fat_per_100g: "",
-        saturates_per_100g: "",
-        carbs_per_100g: "",
-        sugar_per_100g: "",
-        protein_per_100g: "",
-        salt_per_100g: ""
+        calories_per_100g: prefilledData?.calories_per_100g?.toString() || "",
+        fat_per_100g: prefilledData?.fat_per_100g?.toString() || "",
+        saturates_per_100g: prefilledData?.saturates_per_100g?.toString() || "",
+        carbs_per_100g: prefilledData?.carbs_per_100g?.toString() || "",
+        sugar_per_100g: prefilledData?.sugar_per_100g?.toString() || "",
+        protein_per_100g: prefilledData?.protein_per_100g?.toString() || "",
+        salt_per_100g: prefilledData?.salt_per_100g?.toString() || "",
+        barcode: prefilledData?.barcode || "",
+        photo_url: prefilledData?.photo_url || ""
     });
 
     // Univerzální handler pro změnu inputů
@@ -61,6 +65,8 @@ export default function AddFood() {
                 sugar_per_100g: parseFloat(formData.sugar_per_100g) || 0,
                 protein_per_100g: parseFloat(formData.protein_per_100g) || 0,
                 salt_per_100g: parseFloat(formData.salt_per_100g) || 0,
+                barcode: formData.barcode || null,
+                photo_url: formData.photo_url || null,
             });
 
             navigate("/foods");

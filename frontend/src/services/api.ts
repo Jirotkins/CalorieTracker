@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Dynamická adresa backendu
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Dynamická adresa backendu (směřuje na proxy server ve Vite)
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Založení  základní instance Axiosu
+// Založení základní instance Axiosu
 export const api = axios.create({
   // Adresa backendu
   baseURL: API_URL,

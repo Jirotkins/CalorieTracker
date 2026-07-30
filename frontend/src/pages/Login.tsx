@@ -31,9 +31,13 @@ export default function Login() {
             await login(response.data.access_token);
             navigate('/dashboard');
         }
-        catch (err) {
-            // Nastavení chybové hlášky pokud Axios vyhodí chybu
-            setError('Nesprávné jméno nebo heslo');
+        catch (err: any) {
+            // Vypíše kompletní chybu do konzole v prohlížeči (F12)
+            console.error("Chyba při přihlašování:", err);
+
+            // Nastaví přesnou chybovou hlášku z backendu (nebo ze sítě) na obrazovku
+            const errorMessage = err.response?.data?.detail || err.message || 'Neznámá chyba';
+            setError(`Chyba: ${errorMessage}`);
         }
         finally {
             // Vypnutí načítacího kolečka nehledě na výstup
