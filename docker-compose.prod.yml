@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CADDY_INGRESS_NETWORKS=caddy
+    networks:
+      - caddy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - caddy_data:/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    environment:
+      - DATABASE_URL=sqlite:////app/data/tracker.db
+    volumes:
+      - ./data:/app/data
+    networks:
+      - caddy
+    restart: unless-stopped
+    # Zde nebude zveřejňovat porty přímo ven, přístup řeší Caddy skrz nginx
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    networks:
+      - caddy
+    labels:
+      caddy: calorie-tracker-jirotkins.duckdns.org
+      caddy.reverse_proxy: "{{upstreams 80}}"
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+
+networks:
+  caddy:
+    name: caddy

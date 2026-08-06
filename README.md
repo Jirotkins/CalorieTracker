@@ -1,5 +1,7 @@
 # CalorieTracker 🍏
 
+🔗 **Live Demo:** [https://calorie-tracker-jirotkins.duckdns.org](https://calorie-tracker-jirotkins.duckdns.org)
+*(Please note: As a personal tracker, public registration is intentionally disabled. Contact me for a demo account.)*
 Full-stack RESTful calorie and nutrition tracking application. This project is built to demonstrate end-to-end development skills, from robust backend API design to responsive and interactive frontend interfaces.
 
 ## 🚀 Current Status: Building the Frontend
@@ -62,5 +64,21 @@ docker exec -it <YOUR_BACKEND_CONTAINER_NAME> alembic upgrade head
 - **Backend API & Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
+
+## 🌍 Production Deployment
+
+This application is fully prepared for cloud deployment using a dedicated production setup (`docker-compose.prod.yml`).
+
+### Infrastructure Details
+- **Hosting:** Oracle Cloud Infrastructure (OCI) Free Tier.
+- **Frontend Server:** Nginx (serves static files and proxies `/api` to the backend).
+- **SSL / HTTPS:** Automated via [Caddy Docker Proxy](https://github.com/lucaslorentz/caddy-docker-proxy).
+- **Domain:** Configured with a free DuckDNS subdomain for HTTPS PWA compatibility.
+- **Live URL:** [https://calorie-tracker-jirotkins.duckdns.org](https://calorie-tracker-jirotkins.duckdns.org)
+
+To run the production build on a server:
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
 
 > *Developed with passion. Open to junior developer opportunities!*

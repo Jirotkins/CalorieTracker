@@ -1,0 +1,24 @@
+# Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Zkopíruje package soubory a nainstalujeme závislosti
+COPY package*.json ./
+RUN npm ci
+
+# Zkopíruje zbytek kódu a spustíme build
+COPY . .
+RUN npm run build
+
+# Nginx
+FROM nginx:alpine
+
+# Zkopíruje vlastní nginx konfiguraci
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Zkopíruje zkompilovanou aplikaci
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

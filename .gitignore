@@ -4,3 +4,5 @@ todays_meals
 venv
 __pycache__
 .vscode/
+oracle.key
+project.tar.gz
