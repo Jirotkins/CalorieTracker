@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, Camera } from "lucide-react";
 import { api } from "../services/api";
@@ -10,6 +10,12 @@ export default function AddFood() {
     const location = useLocation();
     const prefilledData = location.state?.prefilledData;
     const [isLoading, setIsLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Pro sledování, zda má fotku smazat při opuštění stránky
+    const uploadedPhotoUrlRef = useRef<string | null>(null);
+    const isSubmittedRef = useRef(false);
 
     // Stav formuláře
     const [formData, setFormData] = useState({
@@ -25,6 +31,17 @@ export default function AddFood() {
         barcode: prefilledData?.barcode || "",
         photo_url: prefilledData?.photo_url || ""
     });
+
+    // Cleanup při opuštění stránky (např. tlačítko zpět)
+    useEffect(() => {
+        return () => {
+            // Pokud fotku nahráli, ale formulář nebyl odeslán
+            if (!isSubmittedRef.current && uploadedPhotoUrlRef.current) {
+                api.delete("/upload", { data: { url: uploadedPhotoUrlRef.current } })
+                   .catch(console.error);
+            }
+        };
+    }, []);
 
     // Univerzální handler pro změnu inputů
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +65,44 @@ export default function AddFood() {
         if (parsedValue !== "" && !/^\d*\.?\d*$/.test(parsedValue)) return;
 
         setFormData({ ...formData, [name]: parsedValue });
+    };
+
+    // Handler pro výběr fotky
+    const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Uloží si původní URL fotky, aby po úspěšném nahrání nové byla smazána
+        const oldPhotoUrl = formData.photo_url;
+
+        // Okamžitý lokální náhled (bez čekání na upload)
+        const localPreview = URL.createObjectURL(file);
+        setFormData(prev => ({ ...prev, photo_url: localPreview }));
+        setIsUploading(true);
+
+        try {
+            const uploadData = new FormData();
+            uploadData.append("file", file);
+            const response = await api.post("/upload", uploadData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            
+            // Smaže starou fotku ze serveru, pokud tam nějaká byla
+            if (oldPhotoUrl && oldPhotoUrl.startsWith("/static/photos/")) {
+                api.delete("/upload", { data: { url: oldPhotoUrl } }).catch(console.error);
+            }
+
+            const newUrl = response.data.url;
+            uploadedPhotoUrlRef.current = newUrl; // Uloží pro případný cleanup při odchodu
+
+            // Nahradí lokální preview skutečnou URL ze serveru
+            setFormData(prev => ({ ...prev, photo_url: newUrl }));
+        } catch (err) {
+            console.error("Chyba při nahrávání fotky:", err);
+            setFormData(prev => ({ ...prev, photo_url: prefilledData?.photo_url || "" }));
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -103,13 +158,48 @@ export default function AddFood() {
 
                 {/* Přidání fotky */}
                 <div className="flex justify-center mt-2">
+                    {/* Skrytý file input – iOS ukáže volbu foťák/galerie */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoChange}
+                    />
+
                     <button
                         type="button"
-                        onClick={() => alert("Nahrávání fotek brzy přidáme!")}
-                        className="w-28 h-28 rounded-[2rem] bg-surface shadow-sm border-2 border-dashed border-brand/40 flex flex-col items-center justify-center text-brand hover:bg-brand/10 active:scale-95 transition-all"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-28 h-28 rounded-[2rem] overflow-hidden bg-surface shadow-sm border-2 border-dashed border-brand/40 flex flex-col items-center justify-center text-brand hover:bg-brand/10 active:scale-95 transition-all relative"
                     >
-                        <Camera size={32} strokeWidth={1.5} className="mb-1" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Fotka</span>
+                        {formData.photo_url ? (
+                            // Náhled fotky
+                            <>
+                                <img
+                                    src={formData.photo_url}
+                                    alt="Náhled"
+                                    className="w-full h-full object-cover"
+                                />
+                                {/* Overlay při uploadu */}
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                )}
+                                {/* Ikonka pro změnu */}
+                                {!isUploading && (
+                                    <div className="absolute bottom-1.5 right-1.5 bg-black/50 rounded-full p-1">
+                                        <Camera size={12} className="text-white" />
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            // Placeholder
+                            <>
+                                <Camera size={32} strokeWidth={1.5} className="mb-1" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Fotka</span>
+                            </>
+                        )}
                     </button>
                 </div>
 

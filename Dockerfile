@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+# Přidáno pro Pillow
+RUN apk add --no-cache gcc musl-dev zlib-dev jpeg-dev
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

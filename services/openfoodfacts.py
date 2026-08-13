@@ -27,12 +27,12 @@ def fetch_food_from_off(barcode: str) -> Optional[Dict[str, Any]]:
                 "barcode": barcode,
                 "photo_url": photo_url,
                 "calories_per_100g": int(nutriments.get("energy-kcal_100g", 0)),
-                "fat_per_100g": float(nutriments.get("fat_100g", 0)),
-                "saturates_per_100g": float(nutriments.get("saturated-fat_100g", 0)),
-                "carbs_per_100g": float(nutriments.get("carbohydrates_100g", 0)),
-                "sugar_per_100g": float(nutriments.get("sugars_100g", 0)),
-                "protein_per_100g": float(nutriments.get("proteins_100g", 0)),
-                "salt_per_100g": float(nutriments.get("salt_100g", 0))
+                "fat_per_100g": round(float(nutriments.get("fat_100g", 0)), 2),
+                "saturates_per_100g": round(float(nutriments.get("saturated-fat_100g", 0)), 2),
+                "carbs_per_100g": round(float(nutriments.get("carbohydrates_100g", 0)), 2),
+                "sugar_per_100g": round(float(nutriments.get("sugars_100g", 0)), 2),
+                "protein_per_100g": round(float(nutriments.get("proteins_100g", 0)), 2),
+                "salt_per_100g": round(float(nutriments.get("salt_100g", 0)), 2)
             }
             
     except Exception as e:

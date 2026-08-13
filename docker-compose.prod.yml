@@ -23,6 +23,7 @@ services:
       - DATABASE_URL=sqlite:////app/data/tracker.db
     volumes:
       - ./data:/app/data
+      - ./static:/app/static  # Persistentní fotky
     networks:
       - caddy
     restart: unless-stopped

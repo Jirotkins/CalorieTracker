@@ -12,6 +12,11 @@ export default defineConfig({
         target: 'http://backend:8000', // Jméno služby v docker-compose
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '') // Odstraní '/api' před odesláním
+      },
+      // Proxy pro lokální vývoj, aby se načítaly fotky ze /static
+      '/static': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
       }
     }
   },

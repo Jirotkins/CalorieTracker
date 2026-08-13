@@ -11,9 +11,13 @@ export default function BarcodeScanner() {
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const isProcessingRef = useRef(false);
 
+    const startPromiseRef = useRef<Promise<any> | null>(null);
+
     useEffect(() => {
+        let isMounted = true;
         // Inicializuje pouze čistou třídu
-        scannerRef.current = new Html5Qrcode("reader");
+        const scanner = new Html5Qrcode("reader");
+        scannerRef.current = scanner;
 
         // Omezí formáty pouze na 1D čárové kódy
         const config = {
@@ -27,62 +31,85 @@ export default function BarcodeScanner() {
             ],
         };
 
-        scannerRef.current.start(
-            { facingMode: "environment" }, // Striktně zadní kamera
-            config,
-            async (decodedText) => {
-                // Zabraňuje paralelnímu spuštění
-                if (isProcessingRef.current) return;
-                isProcessingRef.current = true;
+        const startScanner = () => {
+            if (!isMounted) return;
 
-                setIsScanning(false);
+            const promise = scanner.start(
+                { facingMode: "environment" }, // Striktně zadní kamera
+                config,
+                async (decodedText) => {
+                    // Zabraňuje paralelnímu spuštění
+                    if (isProcessingRef.current) return;
+                    isProcessingRef.current = true;
 
-                // Zastaví kameru okamžitě po načtení kódu
-                try {
-                    await scannerRef.current?.stop();
-                } catch (e) {
-                    console.error("Chyba při zastavování kamery", e);
-                }
+                    if (isMounted) setIsScanning(false);
 
-                try {
-                    const response = await api.get(`/foods/barcode/${decodedText}`);
-                    const data = response.data;
-
-                    if (data.found_in_our_db) {
-                        alert(`Tato potravina už v databázi existuje: ${data.food.name}`);
-                        navigate('/dashboard');
-                    } else {
-                        navigate('/foods/new', { state: { prefilledData: data.food } });
+                    // Zastaví kameru okamžitě po načtení kódu
+                    try {
+                        if (scanner.isScanning) {
+                            await scanner.stop();
+                        }
+                    } catch (e) {
+                        console.error("Chyba při zastavování kamery", e);
                     }
-                } catch (err: any) {
-                    console.error(err);
-                    setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
-                    setTimeout(() => {
-                        setError(null);
-                        setIsScanning(true); // Umožní skenovat znovu
-                        isProcessingRef.current = false; // Resetuje zámek
-                        // Znovu zapne kameru po chybě
-                        scannerRef.current?.start({ facingMode: "environment" }, config, () => { }, () => { }).catch(console.error);
-                    }, 3000);
+
+                    try {
+                        const response = await api.get(`/foods/barcode/${decodedText}`);
+                        const data = response.data;
+
+                        if (data.found_in_our_db) {
+                            alert(`Tato potravina už v databázi existuje: ${data.food.name}`);
+                            if (isMounted) navigate('/dashboard');
+                        } else {
+                            if (isMounted) navigate('/foods/new', { state: { prefilledData: data.food } });
+                        }
+                    } catch (err: any) {
+                        console.error(err);
+                        if (isMounted) setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
+
+                        setTimeout(() => {
+                            if (!isMounted) return;
+                            setError(null);
+                            setIsScanning(true); // Umožní skenovat znovu
+                            isProcessingRef.current = false; // Resetuje zámek
+                            // Znovu zapne kameru po chybě
+                            startScanner();
+                        }, 3000);
+                    }
+                },
+                () => {
+                    // FAILURE: Volá se při každém snímku, kde není kód
                 }
-            },
-            () => {
-                // FAILURE: Volá se při každém snímku, kde není kód
-            }
-        ).catch((err) => {
-            console.error("Nepodařilo se spustit kameru:", err);
-            setError("Nepodařilo se spustit kameru. Povolte přístup.");
-        });
+            ).catch((err) => {
+                if (isMounted) {
+                    console.error("Nepodařilo se spustit kameru:", err);
+                    setError("Nepodařilo se spustit kameru. Povolte přístup.");
+                }
+            });
+
+            startPromiseRef.current = promise;
+        };
+
+        // Spustíme poprvé
+        startScanner();
 
         // CLEANUP: Zaručí vypnutí kamery při odchodu
         return () => {
-            if (scannerRef.current?.isScanning) {
-                scannerRef.current.stop().then(() => {
-                    scannerRef.current?.clear();
-                }).catch(console.error);
+            isMounted = false;
+            // Počkáme, až se případný start dokončí, a pak kameru tvrdě vypneme
+            if (startPromiseRef.current) {
+                startPromiseRef.current
+                    .then(() => {
+                        if (scanner.isScanning) {
+                            scanner.stop().then(() => {
+                                scanner.clear();
+                            }).catch(console.error);
+                        }
+                    })
+                    .catch(() => { });
             }
         };
-    }, []);
+    }, [navigate]);
 
     return (
         <main className="h-dvh bg-black relative text-white overflow-hidden">
@@ -129,6 +156,16 @@ export default function BarcodeScanner() {
 
                 {/* Ztmavovací spodní pruh */}
                 <div className="bg-black/60 backdrop-blur-md h-1/3 w-full flex flex-col items-center justify-center p-8 text-center">
+                    {isScanning && !error && (
+                        <div className="flex flex-col items-center gap-3">
+                            <p className="text-white/80 font-medium text-sm">
+                                Namiř na čárový kód
+                            </p>
+                            <p className="text-white/50 text-xs">
+                                Drž telefon <span className="text-white/80 font-semibold">20–30 cm</span> od obalu
+                            </p>
+                        </div>
+                    )}
                     {!isScanning && !error && (
                         <div className="flex flex-col items-center animate-pulse">
                             <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
