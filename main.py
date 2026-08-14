@@ -9,7 +9,8 @@ from api.deps import get_current_user
 app = FastAPI(
     title="CalorieTracker API",
     description="API pro sledování kalorií",
-    version="1.0.0"
+    version="1.0.0",
+    root_path="/api"  # Pro funkčnost Swagger UI za Nginx proxy
 )
 
 # CORS pro komunikaci s frontendem
