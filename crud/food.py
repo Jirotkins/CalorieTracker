@@ -9,8 +9,8 @@ def get_store_by_name(session: Session, name: str) -> Store | None:
 
 def get_food(session: Session, food_id: int) -> Food | None:
     """Najde jídlo podle jeho ID."""
-    # session.get() je zkratka pro vyhledávání přímo přes Primary Key (id)
-    return session.get(Food, food_id)
+    query = select(Food).where(Food.id == food_id, Food.is_deleted == False)
+    return session.scalar(query)
 
 def create_store(session: Session, name: str) -> Store:
     """Vytvoří nový obchod (např. 'Lidl'), nebo vrátí existující."""

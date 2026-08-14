@@ -1,13 +1,17 @@
 import { type Food } from "../../types/food";
 import { Utensils } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
     food: Food;
 }
 
 export function FoodCard({ food }: Props) {
+    const navigate = useNavigate();
+
     return (
-        <div className="bg-surface p-3 rounded-3xl border border-surface-hover flex items-center justify-between shadow-sm">
+        <div onClick={() => navigate(`/foods/${food.id}`, { state: { food } })}
+            className="bg-surface p-3 rounded-3xl border border-surface-hover flex items-center justify-between shadow-sm">
 
             {/* Levá část: Fotka + Texty */}
             <div className="flex items-center gap-4">

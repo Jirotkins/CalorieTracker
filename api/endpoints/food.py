@@ -47,7 +47,17 @@ def get_global_catalog(search: str | None = None, db: Session = Depends(get_db))
 # Metoda GET pro získání VLASTNÍCH jídel přihlášeného uživatele
 @router.get("/me", response_model=list[FoodResponse])
 def get_my_foods(search: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Vrátí všechna soukromá jídla nebo recepty uživatele."""
     return crud.food.get_user_food(session=db, user_id=current_user.id, search=search)
+
+@router.get("/{food_id}", response_model=FoodResponse)
+def get_food(food_id: int, db: Session = Depends(get_db)):
+    """Vrátí jídlo podle jeho ID."""
+    food = crud.food.get_food(db, food_id)
+    if food:
+        return food
+    
+    raise HTTPException(status_code=404, detail="Jídlo v DB neexisuje.")
 
 @router.get("/barcode/{barcode}", response_model=BarcodeLookupResponse)
 def lookup_barcode(barcode: str, db: Session = Depends(get_db)):
