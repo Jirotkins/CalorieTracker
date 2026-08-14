@@ -26,12 +26,20 @@ def read_user_me(current_user: User = Depends(get_current_user)):
     """
     return current_user
 
+import os
+
 # Metoda POST pro vytvoření uživatele
 @router.post("/", response_model=UserResponse)
 def create_new_user(user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Vytvoří nového uživatele.
     """
+    
+    # Kontrola invite kódu
+    # Kód si můžeš nastavit v .env souboru jako REGISTRATION_TOKEN=tvuj_kod
+    expected_token = os.getenv("REGISTRATION_TOKEN", "tajny_kod_123")
+    if user_data.invite_code != expected_token:
+        raise HTTPException(status_code=403, detail="Neplatný registrační kód!")
     
     # Kontrola, zda uživatel s tímto jménem neexistuje
     existing_user = crud.user.get_user_by_username(db, user_data.username)

@@ -5,6 +5,7 @@ from typing import Optional
 class UserCreate(BaseModel):
     username: str
     password: str
+    invite_code: str  # Tajný kód nutný pro registraci
     daily_calories_goal: Optional[int] = 2000
     daily_protein_goal: Optional[float] = 120.0
     daily_carbs_goal: Optional[float] = 250.0

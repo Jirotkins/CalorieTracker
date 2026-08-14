@@ -19,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+    env_file: .env
     environment:
       - DATABASE_URL=sqlite:////app/data/tracker.db
     volumes:
