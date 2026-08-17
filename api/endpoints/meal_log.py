@@ -34,41 +34,11 @@ def log_meal(log_data: MealLogCreate, db: Session = Depends(get_db), current_use
     )
     return new_log
 
-@router.get("/{user_id}", response_model=list[MealLogResponse])
-def get_user_logs(user_id: int, db: Session = Depends(get_db)):
-    """Vrátí celý deníček (historii) konkrétního uživatele."""
-    return crud.meal_log.get_user_logs(db, user_id)
-
-# Úprava existujícího záznamu
-@router.put("/{log_id}", response_model=MealLogResponse)
-def update_meal_log(log_id: int, log_data: MealLogUpdate, db: Session = Depends(get_db)):
-    """Upraví existující záznam v deníčku."""
-    
-    # Získá jen ta data, která uživatel chce změnit
-    update_data = log_data.model_dump(exclude_unset=True)
-    
-    updated_log = crud.meal_log.update_meal_log(db, log_id, **update_data)
-    
-    if not updated_log:
-        raise HTTPException(status_code=404, detail="Záznam v deníčku nebyl nalezen")
-        
-    return updated_log
-
-
-# Odstranění záznamu
-@router.delete("/{log_id}")
-def delete_meal_log(log_id: int, db: Session = Depends(get_db)):
-    """Smaže záznam z deníčku."""
-    success = crud.meal_log.delete_meal_log(db, log_id)
-    
-    if not success:
-        raise HTTPException(status_code=404, detail="Záznam v deníčku nebyl nalezen")
-        
-    return {"message": "Záznam z deníčku úspěšně smazán"}
 
 @router.get("/date/{target_date}", response_model=DailySummary)
 def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Vrátí deníček pro konkrétní den (uživatel posílá formát YYYY-MM-DD)."""
+
     logs = crud.meal_log.get_logs_by_date(db, current_user.id, target_date)
     daily_calories = 0
     daily_fats = 0.0
@@ -247,3 +217,27 @@ def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), curr
 
         meal_groups=list(groups.values())
     )
+
+@router.get("/{user_id}", response_model=list[MealLogResponse])
+def get_user_logs(user_id: int, db: Session = Depends(get_db)):
+    """Vrátí celý deníček (historii) konkrétního uživatele."""
+    return crud.meal_log.get_user_logs(db, user_id)
+
+# Úprava existujícího záznamu
+@router.put("/{log_id}", response_model=MealLogResponse)
+def update_meal_log(log_id: int, log_data: MealLogUpdate, db: Session = Depends(get_db)):
+    """Upraví existující záznam v deníčku."""
+    update_data = log_data.model_dump(exclude_unset=True)
+    updated_log = crud.meal_log.update_meal_log(db, log_id, **update_data)
+    if not updated_log:
+        raise HTTPException(status_code=404, detail="Záznam v deníčku nebyl nalezen")
+    return updated_log
+
+# Odstranění záznamu
+@router.delete("/{log_id}")
+def delete_meal_log(log_id: int, db: Session = Depends(get_db)):
+    """Smaže záznam z deníčku."""
+    success = crud.meal_log.delete_meal_log(db, log_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Záznam v deníčku nebyl nalezen")
+    return {"message": "Záznam z deníčku úspěšně smazán"}

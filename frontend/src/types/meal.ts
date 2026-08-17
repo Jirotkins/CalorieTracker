@@ -1,45 +1,50 @@
-// Datový typ pro jedno konkrétní snědené jídlo
-export interface LoggedFoodItem {
+
+// === Reálné typy z API ===
+
+// Jedno jídlo v logu (odpovídá LogItemResponse z backendu)
+export interface LogItemResponse {
     id: number;
-    name: string;
-    grams: number;
+    food_name: string | null;
+    recipe_name?: string | null;
+    amount_grams: number;
     calories: number;
+    fat: number;
+    saturates: number;
+    carbs: number;
+    sugar: number;
+    protein: number;
+    salt: number;
+    portion_name: string | null;
 }
 
-// Datový typ pro celou kategorii a její jídla
-export interface MealCategoryData {
-    name: string;
-    items: LoggedFoodItem[];
+// Jedna kategorie jídel (breakfast, lunch...) s celkovými makry
+export interface MealGroupSummary {
+    meal_type: string;
+    total_calories: number;
+    total_fat: number;
+    total_saturates: number;
+    total_carbs: number;
+    total_sugar: number;
+    total_protein: number;
+    total_salt: number;
+    items: LogItemResponse[];
 }
 
-// Mock data
-export const MOCK_DAILY_MEALS: MealCategoryData[] = [
-    { 
-        name: "Snídaně", 
-        items: [
-            { id: 1, name: "Ovesná kaše s proteinem a ovocem", grams: 65, calories: 250 },
-            { id: 2, name: "Arašídové máslo 100%", grams: 15, calories: 95 }
-        ]
-    },
-    { 
-        name: "Dopolední svačina", 
-        items: [] 
-    },
-    { 
-        name: "Oběd", 
-        items: [
-            { id: 3, name: "Hovězí burger s bulkou", grams: 300, calories: 1048 },
-            { id: 4, name: "Coca Cola Zero", grams: 330, calories: 0 }
-        ]
-    },
-    { 
-        name: "Odpolední svačina", 
-        items: [
-            { id: 5, name: "Mochi salted caramel royal family", grams: 24, calories: 99 }
-        ]
-    },
-    { 
-        name: "Večeře", 
-        items: [] 
-    }
-];
+// Celá odpověď z GET /logs/date/{date}
+export interface DailySummary {
+    total_calories: number;
+    total_fat: number;
+    total_saturates: number;
+    total_carbs: number;
+    total_sugar: number;
+    total_protein: number;
+    total_salt: number;
+    goal_calories: number;
+    goal_fat: number;
+    goal_saturates: number;
+    goal_carbs: number;
+    goal_sugar: number;
+    goal_protein: number;
+    goal_salt: number;
+    meal_groups: MealGroupSummary[];
+}

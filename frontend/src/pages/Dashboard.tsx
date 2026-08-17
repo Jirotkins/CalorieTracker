@@ -4,14 +4,27 @@ import { MacroOverview } from "../components/ui/MacroOverview";
 import { DailyMealLog } from "../components/ui/DailyMealLog";
 import { DateStepper } from "../components/ui/DateStepper";
 import { useAuth } from "../hooks/useAuth";
+import { useDailySummary } from "../hooks/useDailySummary";
+import { type DailyNutrition } from "../types/nutrition";
+import { type DailySummary } from "../types/meal";
 
-import { MOCK_DAILY_NUTRITION } from "../types/nutrition";
-import { MOCK_DAILY_MEALS } from "../types/meal";
+// Adaptér: převede DailySummary z API na formát který čekají komponenty CircularProgress a MacroOverview
+function toNutritionData(summary: DailySummary): DailyNutrition {
+    return {
+        calories:  { consumed: summary.total_calories,   goal: summary.goal_calories },
+        fats:      { consumed: summary.total_fat,        goal: summary.goal_fat },
+        saturates: { consumed: summary.total_saturates,  goal: summary.goal_saturates },
+        carbs:     { consumed: summary.total_carbs,      goal: summary.goal_carbs },
+        sugar:     { consumed: summary.total_sugar,      goal: summary.goal_sugar },
+        protein:   { consumed: summary.total_protein,    goal: summary.goal_protein },
+        salt:      { consumed: summary.total_salt,       goal: summary.goal_salt },
+    }
+}
 
 export default function Dashboard() {
-    // Stav aktuálně zobrazeného dne, výchozí je dnešek
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const { user } = useAuth();
+    const { data, isLoading, error } = useDailySummary(selectedDate);
 
     return (
         <main className="p-4 flex flex-col gap-6 max-w-md mx-auto pb-10">
@@ -23,17 +36,30 @@ export default function Dashboard() {
 
             <DateStepper date={selectedDate} onChange={setSelectedDate} />
 
-            {/* Hlavní kolečko pro kalorie */}
-            <div className="flex justify-center my-4">
-                <CircularProgress data={MOCK_DAILY_NUTRITION.calories} />
-            </div>
+            {/* Stavy načítání a chyby */}
+            {isLoading && (
+                <p className="text-center text-text-muted animate-pulse py-10">Načítám data...</p>
+            )}
+            {error && (
+                <p className="text-center text-red-400 py-10">{error}</p>
+            )}
 
-            {/* Přehled makroživin */}
-            <MacroOverview nutritionData={MOCK_DAILY_NUTRITION} />
+            {/* Reálná data z API */}
+            {data && !isLoading && (
+                <>
+                    {/* Hlavní kolečko pro kalorie */}
+                    <div className="flex justify-center my-4">
+                        <CircularProgress data={toNutritionData(data).calories} />
+                    </div>
 
-            {/* Přehled záznamů pro jeden den */}
-            <DailyMealLog mealsData={MOCK_DAILY_MEALS} />
+                    {/* Přehled makroživin */}
+                    <MacroOverview nutritionData={toNutritionData(data)} />
+
+                    {/* Přehled záznamů pro jeden den */}
+                    <DailyMealLog mealsData={data.meal_groups} />
+                </>
+            )}
 
         </main>
     );
-}
+}
