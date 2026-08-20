@@ -25,7 +25,7 @@ export function MiniCircularProgress({
     // Výpočet procent (rawPercentage pro text, percentage pro oříznutí čáry na max 100%)
     const safeGoal = data.goal > 0 ? data.goal : 1;
     const rawPercentage = (progress / safeGoal) * 100;
-    const percentage = Math.min(rawPercentage, 100); 
+    const percentage = Math.min(rawPercentage, 100);
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
     // Animace najetí
@@ -38,10 +38,10 @@ export function MiniCircularProgress({
         <div className="flex flex-col items-center justify-center gap-1.5">
             {/* Label */}
             <span className="text-sm font-bold text-text-main">{label}</span>
-            
+
             {/* Zkonzumované gramy */}
             <span className="text-sm font-medium text-text-muted">
-                {data.consumed} / {data.goal}g
+                {parseFloat(data.consumed.toFixed(1))} / {data.goal}g
             </span>
 
             {/* Kolečko s procenty uvnitř */}
@@ -85,7 +85,7 @@ export function MiniCircularProgress({
             </div>
 
             {/* Cílové gramy */}
-            
+
         </div>
     );
 }

@@ -6,13 +6,15 @@ interface MaealSectionProps {
     totalCalories: number;
     icon: ReactNode;
     children?: ReactNode;
+    onAddFood: () => void;
 }
 
 export function MealSection({
     title,
     totalCalories,
     icon,
-    children
+    children,
+    onAddFood,
 }: MaealSectionProps) {
     return (
         <section className="mt-4">
@@ -35,10 +37,10 @@ export function MealSection({
                         </div>
                     </div>
                     {/* Pravá část: Tlačítko Přidat (+) */}
-                    <button 
+                    <button
                         onClick={(e) => {
                             e.stopPropagation(); // Aby se neproklikla celá karta, když chceme jen přidat
-                            console.log(`Přidat do: ${title}`);
+                            onAddFood();
                         }}
                         className="p-2 text-brand hover:text-brand-hover hover:bg-brand/10 active:scale-90 rounded-full transition-all"
                         aria-label="Přidat jídlo"

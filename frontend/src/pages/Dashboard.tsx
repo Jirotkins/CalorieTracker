@@ -23,8 +23,12 @@ function toNutritionData(summary: DailySummary): DailyNutrition {
 
 export default function Dashboard() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    // Zvýšení refreshKey vynutí nový fetch v useDailySummary bez změny data
+    const [refreshKey, setRefreshKey] = useState(0);
     const { user } = useAuth();
-    const { data, isLoading, error } = useDailySummary(selectedDate);
+    const { data, isLoading, error } = useDailySummary(selectedDate, refreshKey);
+
+    const handleLogAdded = () => setRefreshKey((prev) => prev + 1);
 
     return (
         <main className="p-4 flex flex-col gap-6 max-w-md mx-auto pb-10">
@@ -56,7 +60,11 @@ export default function Dashboard() {
                     <MacroOverview nutritionData={toNutritionData(data)} />
 
                     {/* Přehled záznamů pro jeden den */}
-                    <DailyMealLog mealsData={data.meal_groups} />
+                    <DailyMealLog
+                        mealsData={data.meal_groups}
+                        selectedDate={selectedDate}
+                        onLogAdded={handleLogAdded}
+                    />
                 </>
             )}
 

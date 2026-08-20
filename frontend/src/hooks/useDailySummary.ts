@@ -8,7 +8,8 @@ function formatDate(date: Date): string {
 }
 
 // Hook který fetchuje denní souhrn pro zadané datum z API
-export function useDailySummary(date: Date) {
+// refreshKey: zvýšení hodnoty vynutí nový fetch (používá Dashboard po zalogování jídla)
+export function useDailySummary(date: Date, refreshKey: number = 0) {
     const [data, setData] = useState<DailySummary | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -31,7 +32,7 @@ export function useDailySummary(date: Date) {
                 setIsLoading(false)
             })
 
-    }, [date.toDateString()]) // Závislost — re-fetch pouze když se změní den (ne čas!)
+    }, [date.toDateString(), refreshKey]) // Závislost — re-fetch při změně dne NEBO refreshKey
 
     return { data, isLoading, error }
 }
