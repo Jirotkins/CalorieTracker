@@ -2,6 +2,7 @@ from datetime import datetime, date
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from models.meal_log import MealLog
+from models.food import Food
 
 def get_meal_log(session: Session, log_id: int) -> MealLog | None:
     """Najde konkrétní záznam v deníčku podle ID."""
@@ -70,5 +71,35 @@ def get_logs_by_date(session: Session, user_id: int, target_date: date) -> list[
     query = select(MealLog).where(
         MealLog.user_id == user_id,
         func.date(MealLog.date_consumed) == target_date
+    )
+    return list(session.scalars(query).all())
+
+
+def get_frequent_foods(session: Session, user_id: int, limit: int = 5) -> list[Food]:
+    """Vrátí nejčástěji logovaná jídla daného uživatele pro 'quick pick' UI.
+
+    Logika:
+    1. Subquery: GROUP BY food_id + COUNT → seřazení sestupně + LIMIT
+    2. JOIN na tabulku Food → vrátí plné Food objekty (ne jen ID)
+    3. WHERE is_deleted == False → soft-delete safe
+    """
+    # Subquery: food_id → počet výskytů, seřazeno od největšího
+    subq = (
+        select(MealLog.food_id, func.count(MealLog.food_id).label("cnt"))
+        .where(
+            MealLog.user_id == user_id,
+            MealLog.food_id.is_not(None),  # Vyloučí záznamy receptů
+        )
+        .group_by(MealLog.food_id)
+        .order_by(func.count(MealLog.food_id).desc())
+        .limit(limit)
+        .subquery()
+    )
+
+    # Hlavní dotaz: JOIN přes subquery → plné Food objekty
+    query = (
+        select(Food)
+        .join(subq, Food.id == subq.c.food_id)
+        .where(Food.is_deleted == False)
     )
     return list(session.scalars(query).all())

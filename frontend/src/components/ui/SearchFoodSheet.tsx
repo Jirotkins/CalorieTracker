@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, X, Plus, Barcode, PenLine, Loader2, Utensils } from "lucide-react";
+import { Search, X, Plus, Barcode, PenLine, Loader2, Utensils, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import { type Food } from "../../types/food";
@@ -29,6 +29,23 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
     const [isSearching, setIsSearching] = useState(false);
     const [selectedFood, setSelectedFood] = useState<Food | null>(null);
     const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+
+    // Nejčastěji přidávaná jídla — fetchují se při otevření sheetu
+    const [frequentFoods, setFrequentFoods] = useState<Food[]>([]);
+    const [isLoadingFrequent, setIsLoadingFrequent] = useState(false);
+
+    // Fetch nejčastějších jídel při každém otevření sheetu
+    // useEffect s [isOpen]: spustí se pokaždé při změně isOpen
+    // Podmínka `if (!isOpen) return` = fetch jen při otevření, ne při zavření
+    useEffect(() => {
+        if (!isOpen) return;
+
+        setIsLoadingFrequent(true);
+        api.get<Food[]>("/foods/frequent?limit=5")
+            .then((res) => setFrequentFoods(res.data))
+            .catch(() => setFrequentFoods([]))
+            .finally(() => setIsLoadingFrequent(false));
+    }, [isOpen]);
 
     // Debounced vyhledávání — 400ms po posledním stisku klávesy
     useEffect(() => {
@@ -75,6 +92,7 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
         setResults([]);
         setSelectedFood(null);
         setIsAddMenuOpen(false);
+        setFrequentFoods([]);
         onClose();
     };
 
@@ -145,20 +163,89 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
                 {/* Scrollovatelný obsah */}
                 <div className="flex-1 overflow-y-auto px-6 pb-4">
 
-                    {/* Prázdný stav — ještě se nehledalo */}
-                    {query.trim() === "" && !isSearching && (
-                        <div className="flex flex-col items-center justify-center h-full gap-3 text-center pb-10">
-                            <div className="p-5 bg-brand/10 rounded-full">
-                                <Search size={32} className="text-brand" />
+                    {/* ── RYCHLÝ VÝBĚR: Nejčastější jídla (zobrazí se jen pokud nepíšeme) ── */}
+                    {query.trim() === "" && (
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-3 mt-1">
+                                <Clock size={14} className="text-text-muted" />
+                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                                    Rychlý výběr
+                                </span>
                             </div>
-                            <p className="text-text-main font-bold text-lg">Začni psát</p>
-                            <p className="text-text-muted text-sm max-w-[220px]">
-                                Vyhledej jídlo ze databáze nebo ho přidej ručně
-                            </p>
+
+                            {/* Skeleton loading */}
+                            {isLoadingFrequent && (
+                                <div className="flex flex-col gap-2">
+                                    {[...Array(4)].map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className="h-[60px] bg-surface-hover rounded-2xl animate-pulse"
+                                            style={{ opacity: 1 - i * 0.18 }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Karta nejčastějšího jídla — stejný design jako search výsledky */}
+                            {!isLoadingFrequent && frequentFoods.length > 0 && (
+                                <div className="flex flex-col gap-2">
+                                    {frequentFoods.map((food) => (
+                                        <button
+                                            key={food.id}
+                                            onClick={() => setSelectedFood(food)}
+                                            className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-surface-hover
+                                                hover:border-brand/40 hover:bg-brand/5 active:scale-[0.98]
+                                                transition-all text-left w-full shadow-sm"
+                                        >
+                                            <div className="w-12 h-12 shrink-0 bg-surface-hover rounded-xl flex items-center justify-center overflow-hidden border border-surface-hover">
+                                                {food.photo_url ? (
+                                                    <img src={food.photo_url} alt={food.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Utensils size={20} className="text-brand" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-text-main text-sm leading-tight truncate">{food.name}</p>
+                                                <div className="flex gap-2 text-[11px] font-semibold mt-0.5">
+                                                    <span className="text-protein">B: {food.protein_per_100g}g</span>
+                                                    <span className="text-carbs">S: {food.carbs_per_100g}g</span>
+                                                    <span className="text-fats">T: {food.fat_per_100g}g</span>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0 flex flex-col items-end">
+                                                <span className="text-brand font-black text-lg leading-tight">{food.calories_per_100g}</span>
+                                                <span className="text-text-muted text-[9px] font-semibold uppercase tracking-wider">kcal/100g</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Separator — odděluje rychlý výběr od prázdného stavu / search pole */}
+                            {!isLoadingFrequent && frequentFoods.length > 0 && (
+                                <div className="flex items-center gap-3 mt-5 mb-2">
+                                    <div className="flex-1 h-px bg-surface-hover" />
+                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">nebo hledej výše</span>
+                                    <div className="flex-1 h-px bg-surface-hover" />
+                                </div>
+                            )}
+
+                            {/* Prázdný stav — uživatel zatím nic nezalogoval */}
+                            {!isLoadingFrequent && frequentFoods.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                                    <div className="p-4 bg-brand/10 rounded-full">
+                                        <Search size={28} className="text-brand" />
+                                    </div>
+                                    <p className="text-text-main font-bold">Začni psát</p>
+                                    <p className="text-text-muted text-sm max-w-[220px]">
+                                        Vyhledej jídlo ze databáze nebo ho přidej ručně
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* Výsledky vyhledávání */}
+                    {/* ── SEARCH VÝSLEDKY (zobrazí se jen pokud píšeme) ── */}
                     {results.length > 0 && (
                         <div className="flex flex-col gap-2 pt-1">
                             {results.map((food) => (
@@ -221,6 +308,7 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
                         </div>
                     )}
                 </div>
+
 
                 {/* Spodní tlačítko "Přidat nové jídlo" — vždy viditelné */}
                 <div className="shrink-0 px-6 pb-6 pt-3 border-t border-surface-hover">
