@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Produkční spouštění bez --reload a na standardním portu 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Před startem API aplikuje nové migrace (po git pull + rebuild není nutné spouštět ručně)
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
