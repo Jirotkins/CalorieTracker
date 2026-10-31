@@ -2,8 +2,11 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
 from datetime import datetime
 
+# Povolené typy jídel dne (stejné pořadí jako v UI)
+MealType = Literal["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"]
+
 class MealLogCreate(BaseModel):
-    meal_type: Literal["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"]
+    meal_type: MealType
     food_id: Optional[int] = None
     recipe_id: Optional[int] = None
     amount_grams: Optional[int] = None
@@ -25,7 +28,7 @@ class MealLogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class MealLogUpdate(BaseModel):
-    meal_type: Optional[str] = None
+    meal_type: Optional[MealType] = None
     food_id: Optional[int] = None
     recipe_id: Optional[int] = None
     amount_grams: Optional[int] = None
@@ -35,6 +38,12 @@ class MealLogUpdate(BaseModel):
 
 class LogItemResponse(BaseModel):
     id: int
+    meal_type: str
+    # ID pro editaci záznamu na frontendu
+    food_id: Optional[int] = None
+    recipe_id: Optional[int] = None
+    portion_id: Optional[int] = None
+    recipe_portion_id: Optional[int] = None
     amount_grams: int
     calories: int
     fat: float
@@ -49,13 +58,13 @@ class LogItemResponse(BaseModel):
 
 class MealGroupSummary(BaseModel):
     meal_type: str
-    total_calories: int
-    total_fat: float
-    total_saturates: float
-    total_carbs: float
-    total_sugar: float
-    total_protein: float
-    total_salt: float
+    total_calories: int = 0
+    total_fat: float = 0.0
+    total_saturates: float = 0.0
+    total_carbs: float = 0.0
+    total_sugar: float = 0.0
+    total_protein: float = 0.0
+    total_salt: float = 0.0
 
     items: list[LogItemResponse] = []
 
