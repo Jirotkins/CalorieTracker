@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react"
 import { api } from "../services/api"
 import { type DailySummary } from "../types/meal"
-
-// Formátuje Date objekt na "YYYY-MM-DD" string pro API
-function formatDate(date: Date): string {
-    return date.toISOString().split("T")[0]
-}
+import { toLocalDateString } from "../utils/date"
 
 // Hook který fetchuje denní souhrn pro zadané datum z API
 // refreshKey: zvýšení hodnoty vynutí nový fetch (používá Dashboard po zalogování jídla)
@@ -19,7 +15,7 @@ export function useDailySummary(date: Date, refreshKey: number = 0) {
         setIsLoading(true)
         setError(null)
 
-        const dateStr = formatDate(date)
+        const dateStr = toLocalDateString(date)
 
         api.get<DailySummary>(`/logs/date/${dateStr}`)
             .then((res) => {

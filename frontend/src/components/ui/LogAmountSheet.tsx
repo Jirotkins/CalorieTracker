@@ -4,6 +4,7 @@ import { Button } from "./Button";
 import { Input } from "./Input";
 import { api } from "../../services/api";
 import { type Food } from "../../types/food";
+import { toLocalDateString } from "../../utils/date";
 
 interface Props {
     isOpen: boolean;
@@ -12,10 +13,6 @@ interface Props {
     selectedDate: Date;
     onClose: () => void;
     onLogAdded: () => void;
-}
-
-function formatDate(date: Date): string {
-    return date.toISOString().split("T")[0];
 }
 
 export function LogAmountSheet({ isOpen, food, mealType, selectedDate, onClose, onLogAdded }: Props) {
@@ -53,7 +50,7 @@ export function LogAmountSheet({ isOpen, food, mealType, selectedDate, onClose, 
                 food_id: food.id,
                 meal_type: mealType,
                 amount_grams: Math.round(gramsNum),
-                date_consumed: formatDate(selectedDate),
+                date_consumed: toLocalDateString(selectedDate),
             });
             setGrams("100"); // reset pro příště
             onLogAdded();
