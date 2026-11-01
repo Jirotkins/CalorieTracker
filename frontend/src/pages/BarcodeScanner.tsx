@@ -1,127 +1,212 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { BarcodeDetector, prepareZXingModule } from "barcode-detector/ponyfill";
+import zxingWasmUrl from "zxing-wasm/reader/zxing_reader.wasm?url";
 import { X } from "lucide-react";
 import { api } from "../services/api";
+
+// WASM dekodér (zxing-cpp) se načítá z našeho serveru, ne z CDN
+prepareZXingModule({
+    overrides: {
+        locateFile: (path: string, prefix: string) => path.endsWith(".wasm") ? zxingWasmUrl : prefix + path,
+    },
+});
+
+// Interval mezi pokusy o dekódování (ms)
+const SCAN_INTERVAL = 120;
+// O kolik se skenovaná oblast zvětší oproti zaměřovači (kód nemusí být přesně uvnitř)
+const SCAN_MARGIN = 0.25;
+
+// Spočítá výřez snímku (v pixelech kamery), který odpovídá zaměřovači na obrazovce.
+// Video je zobrazené přes object-fit: cover → je zvětšené a oříznuté na střed.
+function getScanRegion(video: HTMLVideoElement, target: HTMLElement) {
+    const videoRect = video.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const scale = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
+    const offsetX = (videoRect.width - video.videoWidth * scale) / 2;
+    const offsetY = (videoRect.height - video.videoHeight * scale) / 2;
+
+    const marginX = targetRect.width * SCAN_MARGIN;
+    const marginY = targetRect.height * SCAN_MARGIN;
+    const left = (targetRect.left - videoRect.left - marginX - offsetX) / scale;
+    const top = (targetRect.top - videoRect.top - marginY - offsetY) / scale;
+    const width = (targetRect.width + marginX * 2) / scale;
+    const height = (targetRect.height + marginY * 2) / scale;
+
+    // Oříznutí na hranice snímku
+    const x = Math.max(0, Math.round(left));
+    const y = Math.max(0, Math.round(top));
+    return {
+        x,
+        y,
+        width: Math.min(video.videoWidth - x, Math.round(width + Math.min(0, left))),
+        height: Math.min(video.videoHeight - y, Math.round(height + Math.min(0, top))),
+    };
+}
 
 export default function BarcodeScanner() {
     const navigate = useNavigate();
     const [isScanning, setIsScanning] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const scannerRef = useRef<Html5Qrcode | null>(null);
-    const isProcessingRef = useRef(false);
-
-    const startPromiseRef = useRef<Promise<any> | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const aimRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let isMounted = true;
-        // Inicializuje pouze čistou třídu
-        const scanner = new Html5Qrcode("reader");
-        scannerRef.current = scanner;
+        let stream: MediaStream | null = null;
+        let scanTimer: ReturnType<typeof setTimeout> | null = null;
+        let isProcessing = false;
 
-        // Omezí formáty pouze na 1D čárové kódy
-        const config = {
-            fps: 15,
-            qrbox: { width: 300, height: 150 },
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-            ],
+        // Jen 1D kódy z obalů potravin
+        const detector = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] });
+        // Canvas pro výřez snímku v plném rozlišení kamery
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+
+        const stopCamera = () => {
+            if (scanTimer) clearTimeout(scanTimer);
+            scanTimer = null;
+            stream?.getTracks().forEach((track) => track.stop());
+            stream = null;
         };
 
-        const startScanner = () => {
-            if (!isMounted) return;
+        const scheduleScan = () => {
+            if (isMounted && !isProcessing) {
+                scanTimer = setTimeout(scanFrame, SCAN_INTERVAL);
+            }
+        };
 
-            const promise = scanner.start(
-                { facingMode: "environment" }, // Striktně zadní kamera
-                config,
-                async (decodedText) => {
-                    // Zabraňuje paralelnímu spuštění
-                    if (isProcessingRef.current) return;
-                    isProcessingRef.current = true;
+        const scanFrame = async () => {
+            const video = videoRef.current;
+            const aim = aimRef.current;
+            if (!video || !aim || !context || video.readyState < video.HAVE_ENOUGH_DATA) {
+                scheduleScan();
+                return;
+            }
 
-                    if (isMounted) setIsScanning(false);
+            const region = getScanRegion(video, aim);
+            if (region.width <= 0 || region.height <= 0) {
+                scheduleScan();
+                return;
+            }
+            canvas.width = region.width;
+            canvas.height = region.height;
+            context.drawImage(video, region.x, region.y, region.width, region.height, 0, 0, region.width, region.height);
 
-                    // Zastaví kameru okamžitě po načtení kódu
-                    try {
-                        if (scanner.isScanning) {
-                            await scanner.stop();
-                        }
-                    } catch (e) {
-                        console.error("Chyba při zastavování kamery", e);
-                    }
-
-                    try {
-                        const response = await api.get(`/foods/barcode/${decodedText}`);
-                        const data = response.data;
-
-                        if (data.found_in_our_db) {
-                            alert(`Tato potravina už v databázi existuje: ${data.food.name}`);
-                            if (isMounted) navigate('/dashboard');
-                        } else {
-                            if (isMounted) navigate('/foods/new', { state: { prefilledData: data.food } });
-                        }
-                    } catch (err: any) {
-                        console.error(err);
-                        if (isMounted) setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
-
-                        setTimeout(() => {
-                            if (!isMounted) return;
-                            setError(null);
-                            setIsScanning(true); // Umožní skenovat znovu
-                            isProcessingRef.current = false; // Resetuje zámek
-                            // Znovu zapne kameru po chybě
-                            startScanner();
-                        }, 3000);
-                    }
-                },
-                () => {
-                    // FAILURE: Volá se při každém snímku, kde není kód
+            try {
+                const barcodes = await detector.detect(canvas);
+                if (barcodes.length > 0 && isMounted && !isProcessing) {
+                    await handleCode(barcodes[0].rawValue);
+                    return;
                 }
-            ).catch((err) => {
+            } catch (err) {
+                console.error("Chyba při dekódování snímku:", err);
+            }
+            scheduleScan();
+        };
+
+        const handleCode = async (code: string) => {
+            // Zabraňuje paralelnímu zpracování
+            isProcessing = true;
+            setIsScanning(false);
+            // Zastaví kameru okamžitě po načtení kódu
+            stopCamera();
+
+            try {
+                const response = await api.get(`/foods/barcode/${code}`);
+                const data = response.data;
+
+                if (data.found_in_our_db) {
+                    alert(`Tato potravina už v databázi existuje: ${data.food.name}`);
+                    if (isMounted) navigate('/dashboard');
+                } else {
+                    if (isMounted) navigate('/foods/new', { state: { prefilledData: data.food } });
+                }
+            } catch (err: any) {
+                console.error(err);
+                if (isMounted) setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
+
+                setTimeout(() => {
+                    if (!isMounted) return;
+                    setError(null);
+                    setIsScanning(true); // Umožní skenovat znovu
+                    isProcessing = false; // Resetuje zámek
+                    // Znovu zapne kameru po chybě
+                    startCamera();
+                }, 3000);
+            }
+        };
+
+        const startCamera = async () => {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setError("Kamera není dostupná (je potřeba HTTPS).");
+                return;
+            }
+
+            try {
+                // Zadní kamera ve vysokém rozlišení — čárové kódy potřebují detail
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: { ideal: "environment" },
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                    },
+                });
+
+                // Stránka mezitím mohla být opuštěna
+                if (!isMounted) {
+                    newStream.getTracks().forEach((track) => track.stop());
+                    return;
+                }
+                stream = newStream;
+
+                // Kontinuální ostření tam, kde ho prohlížeč podporuje (Android)
+                const [track] = newStream.getVideoTracks();
+                const capabilities = track.getCapabilities?.() as { focusMode?: string[] } | undefined;
+                if (capabilities?.focusMode?.includes("continuous")) {
+                    track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => { });
+                }
+
+                const video = videoRef.current;
+                if (!video) return;
+                video.srcObject = newStream;
+                await video.play();
+                scheduleScan();
+            } catch (err) {
                 if (isMounted) {
                     console.error("Nepodařilo se spustit kameru:", err);
                     setError("Nepodařilo se spustit kameru. Povolte přístup.");
                 }
-            });
-
-            startPromiseRef.current = promise;
+            }
         };
 
-        // Spustíme poprvé
-        startScanner();
+        startCamera();
 
         // CLEANUP: Zaručí vypnutí kamery při odchodu
         return () => {
             isMounted = false;
-            // Počkáme, až se případný start dokončí, a pak kameru tvrdě vypneme
-            if (startPromiseRef.current) {
-                startPromiseRef.current
-                    .then(() => {
-                        if (scanner.isScanning) {
-                            scanner.stop().then(() => {
-                                scanner.clear();
-                            }).catch(console.error);
-                        }
-                    })
-                    .catch(() => { });
-            }
+            stopCamera();
         };
     }, [navigate]);
 
     return (
         <main className="h-dvh bg-black relative text-white overflow-hidden">
 
-            {/* Kamera - Surový video feed */}
-            <div id="reader" className="absolute inset-0 w-full h-full object-cover" />
+            {/* Kamera - surový video feed přes celou obrazovku */}
+            <video
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                muted
+                autoPlay
+            />
 
-            {/* Rozmazaný overlay */}
+            {/* Ztmavený overlay (bez blur efektu — ten na živém videu zbytečně zatěžuje GPU) */}
             <div className="absolute inset-0 pointer-events-none z-10 flex flex-col">
 
                 {/* Ztmavovací horní pruh */}
-                <div className="bg-black/60 backdrop-blur-md h-1/4 w-full flex items-start p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+                <div className="bg-black/60 h-1/4 w-full flex items-start p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
                     <button
                         onClick={() => navigate(-1)}
                         className="p-3 bg-white/20 backdrop-blur-md rounded-full pointer-events-auto active:scale-95 transition-transform"
@@ -135,10 +220,10 @@ export default function BarcodeScanner() {
 
                 {/* Střední pruh s výřezem */}
                 <div className="flex flex-1 w-full relative">
-                    <div className="bg-black/60 backdrop-blur-md flex-1" />
+                    <div className="bg-black/60 flex-1" />
 
-                    {/* Samotný zaměřovač (průhledný skrz) */}
-                    <div className="w-[300px] h-[150px] relative mt-auto mb-auto bg-transparent shadow-[0_0_0_4000px_rgba(0,0,0,0.6)] rounded-xl ring-2 ring-white/10 ring-inset">
+                    {/* Samotný zaměřovač (průhledný skrz) — podle něj se počítá skenovaná oblast */}
+                    <div ref={aimRef} className="w-[300px] h-[150px] relative mt-auto mb-auto bg-transparent shadow-[0_0_0_4000px_rgba(0,0,0,0.6)] rounded-xl ring-2 ring-white/10 ring-inset">
                         {/* Rohy zaměřovače */}
                         <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-brand rounded-tl-xl" />
                         <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-brand rounded-tr-xl" />
@@ -151,18 +236,18 @@ export default function BarcodeScanner() {
                         )}
                     </div>
 
-                    <div className="bg-black/60 backdrop-blur-md flex-1" />
+                    <div className="bg-black/60 flex-1" />
                 </div>
 
                 {/* Ztmavovací spodní pruh */}
-                <div className="bg-black/60 backdrop-blur-md h-1/3 w-full flex flex-col items-center justify-center p-8 text-center">
+                <div className="bg-black/60 h-1/3 w-full flex flex-col items-center justify-center p-8 text-center">
                     {isScanning && !error && (
                         <div className="flex flex-col items-center gap-3">
                             <p className="text-white/80 font-medium text-sm">
                                 Namiř na čárový kód
                             </p>
                             <p className="text-white/50 text-xs">
-                                Drž telefon <span className="text-white/80 font-semibold">20–30 cm</span> od obalu
+                                Drž telefon <span className="text-white/80 font-semibold">15–25 cm</span> od obalu
                             </p>
                         </div>
                     )}
