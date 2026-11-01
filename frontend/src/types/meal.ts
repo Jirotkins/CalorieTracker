@@ -1,9 +1,26 @@
 
+// Typy jídel dne (pořadí odpovídá zobrazení na dashboardu)
+export const MEAL_TYPES = ["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"] as const;
+
+// Překlad API klíčů na česky
+export const MEAL_LABELS: Record<string, string> = {
+    breakfast: "Snídaně",
+    morning_snack: "Dopolední svačina",
+    lunch: "Oběd",
+    afternoon_snack: "Odpolední svačina",
+    dinner: "Večeře",
+};
+
 // === Reálné typy z API ===
 
 // Jedno jídlo v logu (odpovídá LogItemResponse z backendu)
 export interface LogItemResponse {
     id: number;
+    meal_type: string;
+    food_id: number | null;
+    recipe_id: number | null;
+    portion_id: number | null;
+    recipe_portion_id: number | null;
     food_name: string | null;
     recipe_name?: string | null;
     amount_grams: number;

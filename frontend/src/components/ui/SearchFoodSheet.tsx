@@ -3,6 +3,7 @@ import { Search, X, Plus, Barcode, PenLine, Loader2, Utensils, Clock } from "luc
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import { type Food } from "../../types/food";
+import { MEAL_LABELS } from "../../types/meal";
 import { LogAmountSheet } from "./LogAmountSheet";
 
 interface Props {
@@ -12,15 +13,6 @@ interface Props {
     onClose: () => void;
     onLogAdded: () => void;
 }
-
-// Překlad meal_type na češtinu pro záhlaví sheetu
-const MEAL_LABELS: Record<string, string> = {
-    breakfast: "Snídaně",
-    morning_snack: "Dopolední svačina",
-    lunch: "Oběd",
-    afternoon_snack: "Odpolední svačina",
-    dinner: "Večeře",
-};
 
 export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLogAdded }: Props) {
     const navigate = useNavigate();

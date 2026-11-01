@@ -12,7 +12,7 @@ export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }:
     return (
         <div 
             onClick={onClickItem}
-            className="flex items-center justify-between p-4 bg-surface select-none"
+            className="flex items-center justify-between p-4 bg-surface select-none cursor-pointer active:bg-surface-hover transition-colors"
         >
             
             <div className="flex items-center gap-4 flex-1 overflow-hidden">
@@ -35,16 +35,19 @@ export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }:
                 </div>
             </div>
             
-            <button 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClickInfo) onClickInfo();
-                }}
-                className="p-3 -mr-2 text-slate-400 active:text-brand transition-colors"
-                aria-label="Více informací"
-            >
-                <Eye size={22} strokeWidth={1.5} />
-            </button>
+            {/* Detail jídla (jen pokud existuje stránka, kam vést) */}
+            {onClickInfo && (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClickInfo();
+                    }}
+                    className="p-3 -mr-2 text-slate-400 active:text-brand transition-colors"
+                    aria-label="Více informací"
+                >
+                    <Eye size={22} strokeWidth={1.5} />
+                </button>
+            )}
 
         </div>
     );

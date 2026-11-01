@@ -1,18 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Coffee, Apple, Utensils, Croissant, Moon } from "lucide-react";
 import { MealSection } from "./MealSection";
 import { FoodLogItem } from "./FoodLogItem";
 import { SearchFoodSheet } from "./SearchFoodSheet";
-import { type MealGroupSummary } from "../../types/meal";
-
-// Překlad API klíčů na česky
-const MEAL_LABELS: Record<string, string> = {
-    breakfast: "Snídaně",
-    morning_snack: "Dopolední svačina",
-    lunch: "Oběd",
-    afternoon_snack: "Odpolední svačina",
-    dinner: "Večeře",
-}
+import { LogAmountSheet, type LoggableItem } from "./LogAmountSheet";
+import { api } from "../../services/api";
+import { type MealGroupSummary, type LogItemResponse, MEAL_LABELS } from "../../types/meal";
 
 function getIconForMealType(mealType: string) {
     switch (mealType) {
@@ -25,6 +19,19 @@ function getIconForMealType(mealType: string) {
     }
 }
 
+// Záloha pro smazaná jídla (API je už nevrátí) — hodnoty na 100 g dopočítá ze záznamu
+function sourceFromLogItem(item: LogItemResponse): LoggableItem {
+    const ratio = item.amount_grams > 0 ? 100 / item.amount_grams : 0;
+    return {
+        id: item.food_id ?? item.recipe_id ?? 0,
+        name: item.food_name ?? item.recipe_name ?? "Neznámé jídlo",
+        calories_per_100g: item.calories * ratio,
+        protein_per_100g: item.protein * ratio,
+        carbs_per_100g: item.carbs * ratio,
+        fat_per_100g: item.fat * ratio,
+    };
+}
+
 interface DailyMealLogProps {
     mealsData: MealGroupSummary[];
     selectedDate: Date;
@@ -32,8 +39,33 @@ interface DailyMealLogProps {
 }
 
 export function DailyMealLog({ mealsData, selectedDate, onLogAdded }: DailyMealLogProps) {
+    const navigate = useNavigate();
     // null = sheet zavřen; string = sheet otevřen pro daný meal_type
     const [activeMealType, setActiveMealType] = useState<string | null>(null);
+
+    // Editace existujícího záznamu
+    const [editingLog, setEditingLog] = useState<LogItemResponse | null>(null);
+    const [editingSource, setEditingSource] = useState<LoggableItem | null>(null);
+    // Samostatný flag, aby se obsah sheetu neměnil během animace zavírání
+    const [isEditOpen, setIsEditOpen] = useState(false);
+
+    // Načte hodnoty jídla/receptu na 100 g a otevře sheet v režimu úprav
+    const openEdit = async (item: LogItemResponse) => {
+        const endpoint = item.food_id ? `/foods/${item.food_id}` : `/recipes/${item.recipe_id}`;
+        try {
+            const res = await api.get<LoggableItem>(endpoint);
+            setEditingSource(res.data);
+        } catch {
+            setEditingSource(sourceFromLogItem(item));
+        }
+        setEditingLog(item);
+        setIsEditOpen(true);
+    };
+
+    const handleEditDone = () => {
+        setIsEditOpen(false);
+        onLogAdded();
+    };
 
     return (
         <>
@@ -54,7 +86,8 @@ export function DailyMealLog({ mealsData, selectedDate, onLogAdded }: DailyMealL
                                         name={item.food_name ?? item.recipe_name ?? "Neznámé jídlo"}
                                         grams={item.amount_grams}
                                         calories={item.calories}
-                                        onClickInfo={() => console.log(`Info: ${item.food_name}`)}
+                                        onClickItem={() => openEdit(item)}
+                                        onClickInfo={item.food_id ? () => navigate(`/foods/${item.food_id}`) : undefined}
                                     />
                                 ))}
                             </div>
@@ -71,6 +104,17 @@ export function DailyMealLog({ mealsData, selectedDate, onLogAdded }: DailyMealL
                 onClose={() => setActiveMealType(null)}
                 onLogAdded={onLogAdded}
             />
+
+            {/* LogAmountSheet v režimu úprav existujícího záznamu */}
+            <LogAmountSheet
+                isOpen={isEditOpen}
+                food={editingSource}
+                mealType={editingLog?.meal_type ?? "breakfast"}
+                selectedDate={selectedDate}
+                existingLog={editingLog}
+                onClose={() => setIsEditOpen(false)}
+                onLogAdded={handleEditDone}
+            />
         </>
     );
-}
+}
