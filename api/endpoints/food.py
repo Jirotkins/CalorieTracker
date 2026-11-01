@@ -35,7 +35,8 @@ def create_food(food_data: FoodCreate, db: Session = Depends(get_db), current_us
         user_id=target_user_id,
         barcode=food_data.barcode,
         photo_url=food_data.photo_url,
-        store_names=food_data.store_names
+        store_names=food_data.store_names,
+        portions=food_data.portions
     )
     return new_food
 
@@ -100,10 +101,10 @@ def get_food(food_id: int, db: Session = Depends(get_db)):
 def update_food(food_id: int, food_data: FoodUpdate, db: Session = Depends(get_db)):
     """Upraví existující jídlo v katalogu."""
     
-    # Pošle jen upravená data od uživatele
-    update_data = food_data.model_dump(exclude_unset=True)
+    # Pošle jen upravená data od uživatele (porce zvlášť jako objekty)
+    update_data = food_data.model_dump(exclude_unset=True, exclude={"portions"})
     
-    updated_food = crud.food.update_food(db, food_id, **update_data)
+    updated_food = crud.food.update_food(db, food_id, portions=food_data.portions, **update_data)
     if not updated_food:
         raise HTTPException(status_code=404, detail="Jídlo nebylo nalezeno")
         

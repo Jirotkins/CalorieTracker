@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any
-from .portion import PortionCreate, PortionResponse
+from .portion import PortionCreate, PortionUpdate, PortionResponse
 
 class FoodCreate(BaseModel):
     name: str
@@ -53,6 +53,8 @@ class FoodUpdate(BaseModel):
     protein_per_100g: Optional[float] = None
     salt_per_100g: Optional[float] = None
     photo_url: Optional[str] = None
+    # Pokud je posláno, nahradí celý seznam porcí (chybějící porce se smažou)
+    portions: Optional[list[PortionUpdate]] = None
 
 class BarcodeLookupResponse(BaseModel):
     found_in_our_db: bool

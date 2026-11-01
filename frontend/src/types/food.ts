@@ -5,7 +5,6 @@ export interface Store {
 
 export interface FoodPortion {
     id: number;
-    food_id: number;
     name: string;
     weight_grams: number;
 }

@@ -7,6 +7,7 @@ import { SearchFoodSheet } from "./SearchFoodSheet";
 import { LogAmountSheet, type LoggableItem } from "./LogAmountSheet";
 import { api } from "../../services/api";
 import { type MealGroupSummary, type LogItemResponse, MEAL_LABELS } from "../../types/meal";
+import { formatAmount } from "../../utils/number";
 
 function getIconForMealType(mealType: string) {
     switch (mealType) {
@@ -29,6 +30,7 @@ function sourceFromLogItem(item: LogItemResponse): LoggableItem {
         protein_per_100g: item.protein * ratio,
         carbs_per_100g: item.carbs * ratio,
         fat_per_100g: item.fat * ratio,
+        portions: [],
     };
 }
 
@@ -85,6 +87,9 @@ export function DailyMealLog({ mealsData, selectedDate, onLogAdded }: DailyMealL
                                         key={item.id}
                                         name={item.food_name ?? item.recipe_name ?? "Neznámé jídlo"}
                                         grams={item.amount_grams}
+                                        portionLabel={item.portion_name && item.portion_count
+                                            ? `${formatAmount(item.portion_count)}× ${item.portion_name}`
+                                            : undefined}
                                         calories={item.calories}
                                         onClickItem={() => openEdit(item)}
                                         onClickInfo={item.food_id ? () => navigate(`/foods/${item.food_id}`) : undefined}

@@ -55,6 +55,8 @@ class LogItemResponse(BaseModel):
     food_name: Optional[str] = None
     recipe_name: Optional[str] = None
     portion_name: Optional[str] = None
+    # Kolik porcí odpovídá amount_grams (např. 1.5 = "1,5× kus")
+    portion_count: Optional[float] = None
 
 class MealGroupSummary(BaseModel):
     meal_type: str

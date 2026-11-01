@@ -17,14 +17,12 @@ export default function FoodDetail() {
     // Ovládá viditelnost action sheetu (3 tečky)
     const [showActions, setShowActions] = useState(false)
 
+    // Data z navigace slouží jen pro okamžité zobrazení — vždy načte aktuální verzi (např. po úpravě)
     useEffect(() => {
-        if (food) return
-        const fetchFood = async () => {
-            const response = await api.get(`/foods/${id}`)
-            setFood(response.data)
-        }
-        fetchFood()
-    }, [])
+        api.get<Food>(`/foods/${id}`)
+            .then((response) => setFood(response.data))
+            .catch((error) => console.error("Chyba při načítání jídla:", error))
+    }, [id])
 
     const handleDelete = async () => {
         if (!confirm(`Opravdu smazat "${food?.name}"?`)) return
@@ -105,6 +103,21 @@ export default function FoodDetail() {
                         </div>
                     </div>
 
+                    {/* Porce — renderuje se jen pokud nějaké existují */}
+                    {food.portions.length > 0 && (
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-wider">Porce</label>
+                            <div className="bg-surface rounded-3xl overflow-hidden shadow-sm">
+                                {food.portions.map((portion) => (
+                                    <div key={portion.id} className="flex items-center justify-between px-4 py-3 border-b border-surface-hover/50 last:border-0">
+                                        <span className="font-semibold text-sm text-text-main">{portion.name}</span>
+                                        <span className="font-bold text-sm text-brand">{portion.weight_grams} g</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Obchody — renderuje se jen pokud food.stores není prázdné */}
                     {food.stores.length > 0 && (
                         <div className="flex flex-col gap-1.5">
@@ -134,7 +147,7 @@ export default function FoodDetail() {
                     </div>
                     <div>
                         <span className="block font-bold">Upravit jídlo</span>
-                        <span className="block text-xs text-text-muted mt-0.5">Změnit název, makra nebo fotku</span>
+                        <span className="block text-xs text-text-muted mt-0.5">Změnit název, makra, porce nebo fotku</span>
                     </div>
                 </button>
 

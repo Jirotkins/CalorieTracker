@@ -3,12 +3,14 @@ import { Circle, Eye } from "lucide-react";
 interface FoodLogItemProps {
     name: string;
     grams: number;
+    // Např. "1,5× kus" — pokud je vyplněno, zobrazí se před gramy
+    portionLabel?: string;
     calories: number;
     onClickInfo?: () => void;
     onClickItem?: () => void;
 }
 
-export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }: FoodLogItemProps) {
+export function FoodLogItem({ name, grams, portionLabel, calories, onClickInfo, onClickItem }: FoodLogItemProps) {
     return (
         <div 
             onClick={onClickItem}
@@ -29,7 +31,10 @@ export function FoodLogItem({ name, grams, calories, onClickInfo, onClickItem }:
                     </span>
                     
                     <div className="flex gap-2 text-[15px] mt-0.5">
-                        <span className="text-brand font-semibold">{grams} g</span>
+                        {portionLabel && (
+                            <span className="text-brand font-semibold">{portionLabel}</span>
+                        )}
+                        <span className={portionLabel ? "text-text-muted" : "text-brand font-semibold"}>{grams} g</span>
                         <span className="text-text-muted">{calories} kcal</span>
                     </div>
                 </div>

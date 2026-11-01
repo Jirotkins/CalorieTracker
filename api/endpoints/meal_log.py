@@ -62,12 +62,15 @@ def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), curr
         else:
             continue
 
+        # Uložené gramy mají přednost (např. 1,5 porce); váha porce je jen záloha pro staré záznamy
         if portion:
-            grams = portion.weight_grams
+            grams = log.amount_grams or portion.weight_grams
             portion_name = portion.name
+            portion_count = round(grams / portion.weight_grams, 2) if portion.weight_grams else None
         else:
             grams = log.amount_grams or 100
             portion_name = None
+            portion_count = None
 
         nutrients = _nutrients_for(source, grams)
         item = LogItemResponse(
@@ -81,6 +84,7 @@ def get_user_logs_by_date(target_date: date, db: Session = Depends(get_db), curr
             recipe_name=log.recipe.name if log.recipe else None,
             amount_grams=grams,
             portion_name=portion_name,
+            portion_count=portion_count,
             **nutrients
         )
 

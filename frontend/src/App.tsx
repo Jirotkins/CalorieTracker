@@ -30,6 +30,7 @@ export default function App() {
           <Route path='/foods/new' element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
           <Route path='/scanner' element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
           <Route path='/foods/:id' element={<ProtectedRoute><FoodDetail /></ProtectedRoute>} />
+          <Route path='/foods/:id/edit' element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
 
         </Routes>
       </BrowserRouter>

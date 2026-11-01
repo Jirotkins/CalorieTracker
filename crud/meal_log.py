@@ -2,7 +2,8 @@ from datetime import datetime, date
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from models.meal_log import MealLog
-from models.food import Food
+from models.food import Food, FoodPortion
+from models.recipe import RecipePortion
 
 def get_meal_log(session: Session, log_id: int) -> MealLog | None:
     """Najde konkrétní záznam v deníčku podle ID."""
@@ -20,6 +21,16 @@ def log_meal(
     date_consumed: datetime | None = None
 ) -> MealLog:
     """Zaznamená snědené jídlo nebo recept do deníčku."""
+    # Gramy jsou zdroj pravdy; u záznamu jen s porcí je převezme z její váhy
+    if amount_grams is None:
+        portion = None
+        if portion_id:
+            portion = session.get(FoodPortion, portion_id)
+        elif recipe_portion_id:
+            portion = session.get(RecipePortion, recipe_portion_id)
+        if portion:
+            amount_grams = portion.weight_grams
+
     new_log = MealLog(
         user_id=user_id,
         food_id=food_id,

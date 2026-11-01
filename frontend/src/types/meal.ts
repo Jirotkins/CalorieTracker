@@ -32,6 +32,7 @@ export interface LogItemResponse {
     protein: number;
     salt: number;
     portion_name: string | null;
+    portion_count: number | null;
 }
 
 // Jedna kategorie jídel (breakfast, lunch...) s celkovými makry
