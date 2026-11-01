@@ -18,8 +18,8 @@ export const NutrientRow = ({ label, name, value, colorClass, isSubItem = false,
         <span className={isSubItem ? "text-sm font-medium text-text-muted" : "font-semibold text-text-main"}>
             {label}
         </span>
+        {/* Nepovinné — prázdné pole se při uložení počítá jako 0 */}
         <input
-            required
             type="text"
             inputMode="decimal"
             name={name}

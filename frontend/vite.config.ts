@@ -14,9 +14,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '') // Odstraní '/api' před odesláním
       },
       // Proxy pro lokální vývoj, aby se načítaly fotky ze /static
+      // Backend má root_path="/api" → fotky servíruje jen pod /api/static (viz nginx.conf)
       '/static': {
         target: 'http://backend:8000',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/static/, '/api/static')
       }
     }
   },

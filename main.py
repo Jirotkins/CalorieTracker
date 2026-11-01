@@ -30,6 +30,7 @@ app.include_router(recipe.router, prefix="/recipes", tags=["Recipes"])
 app.include_router(upload.router, tags=["Upload"])
 
 # Poskytování nahraných fotek
+# Kvůli root_path="/api" jsou dostupné na /api/static/... (nginx a Vite proxy přepisují /static/ → /api/static/)
 os.makedirs("/app/static/photos", exist_ok=True)
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
