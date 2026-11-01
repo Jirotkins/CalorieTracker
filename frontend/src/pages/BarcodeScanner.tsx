@@ -2,8 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BarcodeDetector, prepareZXingModule } from "barcode-detector/ponyfill";
 import zxingWasmUrl from "zxing-wasm/reader/zxing_reader.wasm?url";
-import { X } from "lucide-react";
+import { X, PenLine, ScanLine, Utensils } from "lucide-react";
 import { api } from "../services/api";
+import { type Food } from "../types/food";
 
 // WASM dekodér (zxing-cpp) se načítá z našeho serveru, ne z CDN
 prepareZXingModule({
@@ -48,6 +49,12 @@ export default function BarcodeScanner() {
     const navigate = useNavigate();
     const [isScanning, setIsScanning] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Kód, který není v naší DB ani v Open Food Facts → nabídne ruční přidání
+    const [notFoundCode, setNotFoundCode] = useState<string | null>(null);
+    // Jídlo s tímto kódem už v naší DB je → nabídne přechod na jeho detail
+    const [foundFood, setFoundFood] = useState<Food | null>(null);
+    // Znovu spustí skenování (nastavuje se uvnitř efektu, kde žije kamera)
+    const restartRef = useRef<() => void>(() => { });
     const videoRef = useRef<HTMLVideoElement>(null);
     const aimRef = useRef<HTMLDivElement>(null);
 
@@ -117,14 +124,21 @@ export default function BarcodeScanner() {
                 const data = response.data;
 
                 if (data.found_in_our_db) {
-                    alert(`Tato potravina už v databázi existuje: ${data.food.name}`);
-                    if (isMounted) navigate('/dashboard');
+                    if (isMounted) setFoundFood(data.food);
                 } else {
                     if (isMounted) navigate('/foods/new', { state: { prefilledData: data.food } });
                 }
             } catch (err: any) {
                 console.error(err);
-                if (isMounted) setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
+                if (!isMounted) return;
+
+                // Nenalezeno nikde → uživatel si vybere, jestli přidat ručně nebo skenovat znovu
+                if (err.response?.status === 404) {
+                    setNotFoundCode(code);
+                    return;
+                }
+
+                setError(err.response?.data?.detail || "Jídlo nebylo nalezeno v žádné databázi.");
 
                 setTimeout(() => {
                     if (!isMounted) return;
@@ -179,6 +193,14 @@ export default function BarcodeScanner() {
                     setError("Nepodařilo se spustit kameru. Povolte přístup.");
                 }
             }
+        };
+
+        restartRef.current = () => {
+            setNotFoundCode(null);
+            setFoundFood(null);
+            setIsScanning(true);
+            isProcessing = false;
+            startCamera();
         };
 
         startCamera();
@@ -251,10 +273,61 @@ export default function BarcodeScanner() {
                             </p>
                         </div>
                     )}
-                    {!isScanning && !error && (
+                    {!isScanning && !error && !notFoundCode && !foundFood && (
                         <div className="flex flex-col items-center animate-pulse">
                             <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4" />
                             <p className="font-medium text-white/90">Hledám v databázi...</p>
+                        </div>
+                    )}
+                    {foundFood && (
+                        <div className="flex flex-col items-center gap-3 w-full max-w-xs pointer-events-auto">
+                            <div className="flex items-center gap-3 w-full bg-white/10 rounded-2xl p-3 text-left">
+                                <div className="w-12 h-12 shrink-0 bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
+                                    {foundFood.photo_url ? (
+                                        <img src={foundFood.photo_url} alt={foundFood.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Utensils size={20} className="text-brand" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white/60 text-xs">Už máš v databázi</p>
+                                    <p className="font-semibold text-white truncate">{foundFood.name}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate(`/foods/${foundFood.id}`, { state: { food: foundFood } })}
+                                className="w-full flex items-center justify-center gap-2 bg-brand text-white font-semibold py-3 rounded-2xl active:scale-95 transition-transform"
+                            >
+                                <Utensils size={18} />
+                                Zobrazit jídlo
+                            </button>
+                            <button
+                                onClick={() => restartRef.current()}
+                                className="w-full flex items-center justify-center gap-2 bg-white/15 text-white font-semibold py-3 rounded-2xl active:scale-95 transition-transform"
+                            >
+                                <ScanLine size={18} />
+                                Skenovat znovu
+                            </button>
+                        </div>
+                    )}
+                    {notFoundCode && (
+                        <div className="flex flex-col items-center gap-3 w-full max-w-xs pointer-events-auto">
+                            <p className="font-semibold text-white">Potravina nebyla nalezena</p>
+                            <p className="text-white/60 text-xs -mt-2">Kód {notFoundCode}</p>
+                            <button
+                                onClick={() => navigate('/foods/new', { state: { prefilledData: { barcode: notFoundCode } } })}
+                                className="w-full flex items-center justify-center gap-2 bg-brand text-white font-semibold py-3 rounded-2xl active:scale-95 transition-transform"
+                            >
+                                <PenLine size={18} />
+                                Přidat ručně
+                            </button>
+                            <button
+                                onClick={() => restartRef.current()}
+                                className="w-full flex items-center justify-center gap-2 bg-white/15 text-white font-semibold py-3 rounded-2xl active:scale-95 transition-transform"
+                            >
+                                <ScanLine size={18} />
+                                Skenovat znovu
+                            </button>
                         </div>
                     )}
                     {error && (

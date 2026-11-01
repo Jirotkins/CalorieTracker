@@ -313,6 +313,13 @@ export default function AddFood() {
                                 className="w-full text-right bg-transparent text-text-main font-semibold focus:outline-none placeholder-text-muted/50"
                             />
                         </div>
+                        {/* Čárový kód (ze skeneru) — jen pro informaci */}
+                        {formData.barcode && (
+                            <div className="flex items-center justify-between p-4 border-t border-surface-hover">
+                                <span className="font-semibold text-text-main shrink-0 w-24">Kód</span>
+                                <span className="text-text-muted font-semibold tabular-nums">{formData.barcode}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
