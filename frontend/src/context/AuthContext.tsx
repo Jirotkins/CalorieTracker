@@ -22,6 +22,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     login: (token: string) => Promise<void>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
 }
 
 // Vytvoření Contextu
@@ -72,6 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // Znovu načte profil (např. po změně denních cílů)
+    const refreshUser = async () => {
+        const response = await api.get<User>('/users/me');
+        setUser(response.data);
+    };
+
     // Funkce pro odhlášení
     const logout = () => {
         localStorage.removeItem('token');
@@ -90,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isAuthenticated,
                 login,
                 logout,
+                refreshUser,
             }}
         >
             {children}

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from core.database import SessionLocal
 import crud.user
-from schemas.user import UserCreate, UserResponse
+from schemas.user import UserCreate, UserResponse, UserGoalsUpdate
 from api.deps import get_current_user
 from models.user import User
 
@@ -25,6 +25,15 @@ def read_user_me(current_user: User = Depends(get_current_user)):
     Vrátí profil aktuálně přihlášeného uživatele podle JWT tokenu.
     """
     return current_user
+
+# Endpoint pro úpravu denních cílů aktuálního uživatele
+@router.put("/me", response_model=UserResponse)
+def update_user_me(goals: UserGoalsUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """
+    Upraví denní cíle přihlášeného uživatele (mění jen poslané hodnoty).
+    """
+    update_data = goals.model_dump(exclude_unset=True)
+    return crud.user.update_user_goals(db, current_user.id, **update_data)
 
 import os
 
