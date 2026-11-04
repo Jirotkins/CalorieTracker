@@ -113,6 +113,9 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
                     dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]
                     ${isOpen ? "translate-y-0" : "translate-y-full"}`}
                 style={{ height: "90dvh" }}
+                // Zavřený sheet je jen schovaný pod obrazovkou → inert zabrání fokusu jeho polí
+                // (jinak iOS po návratu do appky může otevřít klávesnici)
+                inert={!isOpen}
             >
                 {/* iOS Drag Handle */}
                 <div className="w-12 h-1.5 bg-surface-hover rounded-full mx-auto mt-4 shrink-0" />
@@ -139,7 +142,6 @@ export function SearchFoodSheet({ isOpen, mealType, selectedDate, onClose, onLog
                         <input
                             type="search"
                             placeholder="Hledat jídlo..."
-                            autoFocus
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             className="w-full pl-11 pr-4 py-3 rounded-2xl bg-surface-hover border border-transparent

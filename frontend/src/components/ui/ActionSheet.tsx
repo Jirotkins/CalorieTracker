@@ -23,6 +23,8 @@ export function ActionSheet({ isOpen, onClose, title, children }: Props) {
                 className={`fixed bottom-0 left-0 right-0 z-[70] bg-surface rounded-t-[32px] p-6 transition-transform duration-300 ease-out shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)] ${
                     isOpen ? "translate-y-0" : "translate-y-full"
                 }`}
+                // Zavřený sheet je jen schovaný pod obrazovkou → inert zabrání fokusu jeho polí
+                inert={!isOpen}
             >
                 {/* iOS Drag Handle */}
                 <div className="w-12 h-1.5 bg-surface-hover rounded-full mx-auto mb-6" />
