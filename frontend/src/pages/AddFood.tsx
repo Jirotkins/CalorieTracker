@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ChevronLeft, Camera, Plus, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import { type Food } from "../types/food";
+import { resizeImageForUpload } from "../utils/image";
 import { NutrientRow } from "../components/ui/NutrientRow";
 import { Switch } from "../components/ui/Switch";
 
@@ -144,8 +145,10 @@ export default function AddFood() {
         setIsUploading(true);
 
         try {
+            // Zmenší fotku v telefonu (rychlejší upload, HEIC → JPEG)
+            const resized = await resizeImageForUpload(file);
             const uploadData = new FormData();
-            uploadData.append("file", file);
+            uploadData.append("file", resized, "photo.jpg");
             const response = await api.post("/upload", uploadData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -163,7 +166,10 @@ export default function AddFood() {
         } catch (err: any) {
             console.error("Chyba při nahrávání fotky:", err);
             setFormData(prev => ({ ...prev, photo_url: oldPhotoUrl }));
-            alert(err.response?.data?.detail || "Nepodařilo se nahrát fotku. Zkus to znovu.");
+            const message = err.response?.status === 413
+                ? "Fotka je příliš velká."
+                : err.response?.data?.detail || "Nepodařilo se nahrát fotku. Zkus to znovu.";
+            alert(message);
         } finally {
             setIsUploading(false);
         }
