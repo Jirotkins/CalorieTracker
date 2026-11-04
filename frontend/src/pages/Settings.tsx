@@ -119,6 +119,11 @@ export default function Settings() {
                 Odhlásit se
             </button>
 
+            {/* Verze appky (čas buildu) — pro kontrolu, že se po deployi načetla nová verze */}
+            <p className="text-center text-xs text-text-muted">
+                Verze: {new Date(__APP_BUILD_TIME__).toLocaleString("cs-CZ")}
+            </p>
+
             {/* Úprava jednoho cíle */}
             <ActionSheet
                 isOpen={isSheetOpen}

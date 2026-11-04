@@ -23,8 +23,8 @@ async def upload_photo(
 ):
     """Nahraje fotku, resizuje ji na max 800px a vrátí URL."""
 
-    # Kontrola MIME typu
-    if file.content_type not in ALLOWED_TYPES:
+    # Kontrola MIME typu (prázdný typ pustí dál — skutečný obsah ověří Pillow níže)
+    if file.content_type and file.content_type not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=400,
             detail=f"Nepodporovaný formát souboru. Povolené: JPEG, PNG, WebP."

@@ -5,6 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
+  // Čas buildu — v Nastavení je vidět, jaká verze appky v telefonu běží
+  define: {
+    __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   server: {
     proxy: {
       // Všechny requesty začínající na /api budou přeposlány do backendu

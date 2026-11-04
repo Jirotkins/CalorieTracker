@@ -25,6 +25,11 @@ export const NutrientRow = ({ label, name, value, colorClass, isSubItem = false,
             name={name}
             value={value}
             onChange={onChange}
+            // Označí obsah, aby šlo výchozí 0 rovnou přepsat (iOS potřebuje malé zpoždění)
+            onFocus={(e) => {
+                const input = e.target;
+                setTimeout(() => input.select(), 0);
+            }}
             placeholder={name === "calories_per_100g" ? "0" : "0.0"}
             className={`w-20 text-right bg-transparent focus:outline-none ${colorClass} 
                 ${name === "calories_per_100g" ? "text-lg font-black" : isSubItem ? "font-bold text-sm" : "font-bold"}`

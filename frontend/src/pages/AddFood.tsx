@@ -17,18 +17,19 @@ interface PortionRow {
 // Unikátní klíč pro React (nové porce ještě nemají id)
 let nextPortionKey = 0;
 
-// Převede jídlo (z API nebo z Open Food Facts) na hodnoty formuláře
+// Převede jídlo (z API, Open Food Facts nebo jen s čárovým kódem) na hodnoty formuláře.
+// Chybějící nutriční hodnoty začínají na "0" — při psaní se 0 sama přepíše (viz NutrientRow).
 function toFormData(source?: Partial<Food>) {
     return {
         name: source?.name || "",
         is_global: true,
-        calories_per_100g: source?.calories_per_100g?.toString() || "",
-        fat_per_100g: source?.fat_per_100g?.toString() || "",
-        saturates_per_100g: source?.saturates_per_100g?.toString() || "",
-        carbs_per_100g: source?.carbs_per_100g?.toString() || "",
-        sugar_per_100g: source?.sugar_per_100g?.toString() || "",
-        protein_per_100g: source?.protein_per_100g?.toString() || "",
-        salt_per_100g: source?.salt_per_100g?.toString() || "",
+        calories_per_100g: source?.calories_per_100g?.toString() ?? "0",
+        fat_per_100g: source?.fat_per_100g?.toString() ?? "0",
+        saturates_per_100g: source?.saturates_per_100g?.toString() ?? "0",
+        carbs_per_100g: source?.carbs_per_100g?.toString() ?? "0",
+        sugar_per_100g: source?.sugar_per_100g?.toString() ?? "0",
+        protein_per_100g: source?.protein_per_100g?.toString() ?? "0",
+        salt_per_100g: source?.salt_per_100g?.toString() ?? "0",
         barcode: source?.barcode || "",
         photo_url: source?.photo_url || ""
     };
@@ -159,9 +160,10 @@ export default function AddFood() {
 
             // Nahradí lokální preview skutečnou URL ze serveru
             setFormData(prev => ({ ...prev, photo_url: newUrl }));
-        } catch (err) {
+        } catch (err: any) {
             console.error("Chyba při nahrávání fotky:", err);
             setFormData(prev => ({ ...prev, photo_url: oldPhotoUrl }));
+            alert(err.response?.data?.detail || "Nepodařilo se nahrát fotku. Zkus to znovu.");
         } finally {
             setIsUploading(false);
         }
