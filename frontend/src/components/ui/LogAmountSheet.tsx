@@ -20,6 +20,8 @@ const PORTION_STEP = 0.5;
 interface Props {
     isOpen: boolean;
     food: LoggableItem | null;
+    // Nový záznam receptu (u editace se pozná podle existingLog.recipe_id)
+    isRecipe?: boolean;
     mealType: string;
     selectedDate: Date;
     // Vyplněno = editace existujícího záznamu (PUT/DELETE místo POST)
@@ -51,7 +53,7 @@ function portionCountFor(grams: number, portion: FoodPortion): number | null {
     return count > 0 && Math.round(count * portion.weight_grams) === grams ? count : null;
 }
 
-export function LogAmountSheet({ isOpen, food, mealType, selectedDate, existingLog, onClose, onLogAdded }: Props) {
+export function LogAmountSheet({ isOpen, food, isRecipe: isNewRecipe = false, mealType, selectedDate, existingLog, onClose, onLogAdded }: Props) {
     const [mode, setMode] = useState<AmountMode>("grams");
     const [grams, setGrams] = useState("100");
     const [selectedPortionId, setSelectedPortionId] = useState<number | null>(null);
@@ -134,11 +136,11 @@ export function LogAmountSheet({ isOpen, food, mealType, selectedDate, existingL
 
         // Porce se ukládá jen jako popisek, výpočet jde vždy z gramů
         const portionId = mode === "portion" ? selectedPortion?.id ?? null : null;
+        // Recept má vlastní typ porcí i vlastní ID v záznamu
+        const isRecipe = existingLog ? !!existingLog.recipe_id : isNewRecipe;
 
         try {
             if (existingLog) {
-                // Recept má vlastní typ porcí
-                const isRecipe = !!existingLog.recipe_id;
                 await api.put(`/logs/${existingLog.id}`, {
                     meal_type: selectedMealType,
                     amount_grams: Math.round(gramsNum),
@@ -147,10 +149,12 @@ export function LogAmountSheet({ isOpen, food, mealType, selectedDate, existingL
                 });
             } else {
                 await api.post("/logs/", {
-                    food_id: food.id,
+                    food_id: isRecipe ? null : food.id,
+                    recipe_id: isRecipe ? food.id : null,
                     meal_type: mealType,
                     amount_grams: Math.round(gramsNum),
-                    portion_id: portionId,
+                    portion_id: isRecipe ? null : portionId,
+                    recipe_portion_id: isRecipe ? portionId : null,
                     date_consumed: toLocalDateString(selectedDate),
                 });
             }

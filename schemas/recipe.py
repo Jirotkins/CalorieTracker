@@ -1,15 +1,17 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
-from .portion import PortionCreate, PortionResponse
+from .food import FoodResponse
+from .portion import PortionCreate, PortionUpdate, PortionResponse
 
 class RecipeIngredientCreate(BaseModel):
-    amount_grams: int
-    food_id: Optional[int] = None
+    food_id: int
+    amount_grams: int = Field(gt=0)
 
 class RecipeCreate(BaseModel):
     name: str
     photo_url: Optional[str] = None
-    final_weight_grams: Optional[int]
+    # Váha hotového jídla (po uvaření); bez ní se počítá se součtem vah ingrediencí
+    final_weight_grams: Optional[int] = Field(default=None, gt=0)
     ingredients: list[RecipeIngredientCreate]
     portions: list[PortionCreate] = []
 
@@ -17,13 +19,16 @@ class RecipeIngredientResponse(BaseModel):
     id: int
     food_id: int
     amount_grams: int
-    
+    # Celé jídlo ingredience (název, fotka, makra pro přepočet na frontendu)
+    food: FoodResponse
+
     model_config = ConfigDict(from_attributes=True)
 
 class RecipeResponse(BaseModel):
     id: int
     name: str
     photo_url: Optional[str] = None
+    final_weight_grams: Optional[int] = None
     calories_per_100g: int
     fat_per_100g: float
     saturates_per_100g: float
@@ -40,5 +45,7 @@ class RecipeUpdate(BaseModel):
     # Vše je volitelné. Uživatel pošle jen to, co chce reálně změnit.
     name: Optional[str] = None
     photo_url: Optional[str] = None
-    final_weight_grams: Optional[int] = None
+    final_weight_grams: Optional[int] = Field(default=None, gt=0)
     ingredients: Optional[list[RecipeIngredientCreate]] = None
+    # Pokud je posláno, nahradí celý seznam porcí (chybějící porce se smažou)
+    portions: Optional[list[PortionUpdate]] = None

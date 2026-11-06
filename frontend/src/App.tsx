@@ -6,6 +6,8 @@ import Settings from './pages/Settings'
 import AddFood from './pages/AddFood'
 import BarcodeScanner from './pages/BarcodeScanner'
 import FoodDetail from './pages/FoodDetail'
+import RecipeDetail from './pages/RecipeDetail'
+import RecipeForm from './pages/RecipeForm'
 
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
@@ -31,6 +33,9 @@ export default function App() {
           <Route path='/scanner' element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
           <Route path='/foods/:id' element={<ProtectedRoute><FoodDetail /></ProtectedRoute>} />
           <Route path='/foods/:id/edit' element={<ProtectedRoute><AddFood /></ProtectedRoute>} />
+          <Route path='/recipes/new' element={<ProtectedRoute><RecipeForm /></ProtectedRoute>} />
+          <Route path='/recipes/:id' element={<ProtectedRoute><RecipeDetail /></ProtectedRoute>} />
+          <Route path='/recipes/:id/edit' element={<ProtectedRoute><RecipeForm /></ProtectedRoute>} />
 
         </Routes>
       </BrowserRouter>

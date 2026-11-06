@@ -1,8 +1,9 @@
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from models.food import Food, Store, FoodPortion
 from models.meal_log import MealLog
 from schemas.portion import PortionCreate, PortionUpdate
+from crud.portion import sync_portions
 
 def get_store_by_name(session: Session, name: str) -> Store | None:
     """Najde obchod podle jeho jména."""
@@ -88,24 +89,7 @@ def get_user_food(session: Session, user_id: int, search: str | None = None) -> 
 
 def set_food_portions(session: Session, food: Food, portions: list[PortionUpdate]) -> None:
     """Synchronizuje porce jídla: existující (s id) upraví, nové vytvoří, chybějící smaže."""
-    existing = {portion.id: portion for portion in food.portions}
-    kept_ids = set()
-
-    for portion_data in portions:
-        portion = existing.get(portion_data.id) if portion_data.id is not None else None
-        if portion:
-            portion.name = portion_data.name
-            portion.weight_grams = portion_data.weight_grams
-            kept_ids.add(portion.id)
-        else:
-            food.portions.append(FoodPortion(name=portion_data.name, weight_grams=portion_data.weight_grams))
-
-    for portion_id, portion in existing.items():
-        if portion_id in kept_ids:
-            continue
-        # Záznamy v deníčku mají gramy uložené v amount_grams, přijdou jen o název porce
-        session.execute(update(MealLog).where(MealLog.portion_id == portion_id).values(portion_id=None))
-        food.portions.remove(portion)  # delete-orphan cascade porci smaže
+    sync_portions(session, food.portions, portions, FoodPortion, MealLog.portion_id)
 
 def update_food(session: Session, food_id: int, portions: list[PortionUpdate] | None = None, **kwargs) -> Food | None:
     """Upraví hodnoty jídla. Předá jen to, co chce změnit."""

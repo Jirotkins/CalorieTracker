@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Barcode, PenLine } from "lucide-react";
+import { Plus, Barcode, PenLine, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ActionSheet } from "./ActionSheet";
 
@@ -21,7 +21,7 @@ export function AddFoodMenu() {
             </div>
 
             {/* ActionSheet — obsah předává jako children */}
-            <ActionSheet isOpen={isOpen} onClose={() => setIsOpen(false)} title="Přidat jídlo">
+            <ActionSheet isOpen={isOpen} onClose={() => setIsOpen(false)} title="Přidat">
 
                 {/* Čárový kód */}
                 <button
@@ -48,6 +48,20 @@ export function AddFoodMenu() {
                     <div>
                         <span className="block font-bold">Zadat ručně</span>
                         <span className="block text-xs text-text-muted mt-0.5">Vyplnit nutriční hodnoty v aplikaci</span>
+                    </div>
+                </button>
+
+                {/* Nový recept */}
+                <button
+                    onClick={() => { setIsOpen(false); navigate("/recipes/new"); }}
+                    className="flex items-center gap-4 p-4 rounded-3xl bg-surface-hover text-text-main hover:bg-brand/10 hover:text-brand transition-colors text-left"
+                >
+                    <div className="bg-surface p-3 rounded-xl shadow-sm">
+                        <ChefHat size={22} className="text-brand" />
+                    </div>
+                    <div>
+                        <span className="block font-bold">Nový recept</span>
+                        <span className="block text-xs text-text-muted mt-0.5">Složit jídlo z ingrediencí</span>
                     </div>
                 </button>
 

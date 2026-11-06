@@ -92,7 +92,9 @@ export function DailyMealLog({ mealsData, selectedDate, onLogAdded }: DailyMealL
                                             : undefined}
                                         calories={item.calories}
                                         onClickItem={() => openEdit(item)}
-                                        onClickInfo={item.food_id ? () => navigate(`/foods/${item.food_id}`) : undefined}
+                                        onClickInfo={item.food_id
+                                            ? () => navigate(`/foods/${item.food_id}`)
+                                            : () => navigate(`/recipes/${item.recipe_id}`)}
                                     />
                                 ))}
                             </div>

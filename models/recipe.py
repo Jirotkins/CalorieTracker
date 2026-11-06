@@ -18,6 +18,8 @@ class Recipe(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String)
     photo_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Váha hotového jídla (po uvaření); None = součet vah ingrediencí
+    final_weight_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)
     
     calories_per_100g: Mapped[int] = mapped_column(Integer)
     fat_per_100g: Mapped[float] = mapped_column(Float)

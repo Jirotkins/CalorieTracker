@@ -1,16 +1,22 @@
 import { type Food } from "../../types/food";
-import { Utensils } from "lucide-react";
+import { Utensils, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+// Karta jídla i receptu — stačí jim název, fotka a makra na 100 g
+type CardItem = Pick<Food, "name" | "photo_url" | "calories_per_100g" | "protein_per_100g" | "carbs_per_100g" | "fat_per_100g">;
+
 interface Props {
-    food: Food;
+    food: CardItem;
+    // Kam karta po kliknutí vede (detail jídla / receptu)
+    to: string;
+    isRecipe?: boolean;
 }
 
-export function FoodCard({ food }: Props) {
+export function FoodCard({ food, to, isRecipe = false }: Props) {
     const navigate = useNavigate();
 
     return (
-        <div onClick={() => navigate(`/foods/${food.id}`, { state: { food } })}
+        <div onClick={() => navigate(to, { state: isRecipe ? { recipe: food } : { food } })}
             className="bg-surface p-3 rounded-3xl border border-surface-hover flex items-center justify-between shadow-sm">
 
             {/* Levá část: Fotka + Texty */}
@@ -25,7 +31,9 @@ export function FoodCard({ food }: Props) {
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <Utensils className="text-brand" size={24} />
+                        isRecipe
+                            ? <ChefHat className="text-brand" size={24} />
+                            : <Utensils className="text-brand" size={24} />
                     )}
                 </div>
 

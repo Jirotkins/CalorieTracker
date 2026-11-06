@@ -39,7 +39,7 @@ def get_my_recipes(search: str | None = None, db: Session = Depends(get_db), cur
 def update_recipe(recipe_id: int, recipe_data: RecipeUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Upraví existující recept."""
     recipe = crud.recipe.update_recipe(session=db, recipe_id=recipe_id, recipe_data=recipe_data)
-    if not recipe or recipe.is_deleted:
+    if not recipe:
         raise HTTPException(status_code=404, detail="Recept nenalezen nebo byl smazán")
     return recipe
 

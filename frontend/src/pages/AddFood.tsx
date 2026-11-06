@@ -1,22 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ChevronLeft, Camera, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { api } from "../services/api";
 import { type Food } from "../types/food";
-import { resizeImageForUpload } from "../utils/image";
+import { usePhotoUpload } from "../hooks/usePhotoUpload";
 import { NutrientRow } from "../components/ui/NutrientRow";
 import { Switch } from "../components/ui/Switch";
-
-// Řádek porce ve formuláři (id má jen porce, která už existuje v DB)
-interface PortionRow {
-    key: number;
-    id?: number;
-    name: string;
-    weight_grams: string;
-}
-
-// Unikátní klíč pro React (nové porce ještě nemají id)
-let nextPortionKey = 0;
+import { PhotoPicker } from "../components/ui/PhotoPicker";
+import { PortionsEditor } from "../components/ui/PortionsEditor";
+import { type PortionRow, toPortionRows, toPortionPayload, hasInvalidPortion } from "../utils/portions";
 
 // Převede jídlo (z API, Open Food Facts nebo jen s čárovým kódem) na hodnoty formuláře.
 // Chybějící nutriční hodnoty začínají na "0" — při psaní se 0 sama přepíše (viz NutrientRow).
@@ -32,7 +24,6 @@ function toFormData(source?: Partial<Food>) {
         protein_per_100g: source?.protein_per_100g?.toString() ?? "0",
         salt_per_100g: source?.salt_per_100g?.toString() ?? "0",
         barcode: source?.barcode || "",
-        photo_url: source?.photo_url || ""
     };
 }
 
@@ -44,16 +35,10 @@ export default function AddFood() {
     const isEditMode = !!id;
     const prefilledData = location.state?.prefilledData;
     const [isLoading, setIsLoading] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     // V režimu úprav se formulář zobrazí až po načtení jídla
     const [isFoodLoaded, setIsFoodLoaded] = useState(!isEditMode);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Pro sledování, zda má fotku smazat při opuštění stránky
-    const uploadedPhotoUrlRef = useRef<string | null>(null);
-    const isSubmittedRef = useRef(false);
-    // Fotka uloženého jídla — smaže se až po úspěšném uložení nové
-    const originalPhotoUrlRef = useRef<string | null>(null);
+    // Fotka (OFF fotka ze skeneru je jen externí odkaz)
+    const { photoUrl, isUploading, uploadPhoto, setOriginalPhoto, commitPhoto } = usePhotoUpload(prefilledData?.photo_url || "");
 
     // Stav formuláře
     const [formData, setFormData] = useState(() => toFormData(prefilledData));
@@ -65,13 +50,8 @@ export default function AddFood() {
         api.get<Food>(`/foods/${id}`)
             .then((res) => {
                 setFormData(toFormData(res.data));
-                setPortions(res.data.portions.map((p) => ({
-                    key: nextPortionKey++,
-                    id: p.id,
-                    name: p.name,
-                    weight_grams: String(p.weight_grams),
-                })));
-                originalPhotoUrlRef.current = res.data.photo_url ?? null;
+                setPortions(toPortionRows(res.data.portions));
+                setOriginalPhoto(res.data.photo_url);
                 setIsFoodLoaded(true);
             })
             .catch((error) => {
@@ -79,18 +59,7 @@ export default function AddFood() {
                 alert("Nepodařilo se načíst jídlo.");
                 navigate(-1);
             });
-    }, [id, isEditMode, navigate]);
-
-    // Cleanup při opuštění stránky (např. tlačítko zpět)
-    useEffect(() => {
-        return () => {
-            // Pokud fotku nahráli, ale formulář nebyl odeslán
-            if (!isSubmittedRef.current && uploadedPhotoUrlRef.current) {
-                api.delete("/upload", { data: { url: uploadedPhotoUrlRef.current } })
-                   .catch(console.error);
-            }
-        };
-    }, []);
+    }, [id, isEditMode, navigate, setOriginalPhoto]);
 
     // Univerzální handler pro změnu inputů
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,68 +85,9 @@ export default function AddFood() {
         setFormData({ ...formData, [name]: parsedValue });
     };
 
-    // Porce: přidání, úprava a odebrání řádku
-    const addPortion = () => {
-        setPortions([...portions, { key: nextPortionKey++, name: "", weight_grams: "" }]);
-    };
-
-    const updatePortion = (key: number, field: "name" | "weight_grams", value: string) => {
-        // Váha porce - pouze celá čísla
-        if (field === "weight_grams" && value !== "" && !/^\d*$/.test(value)) return;
-        setPortions(portions.map((p) => (p.key === key ? { ...p, [field]: value } : p)));
-    };
-
-    const removePortion = (key: number) => {
-        setPortions(portions.filter((p) => p.key !== key));
-    };
-
-    // Handler pro výběr fotky
-    const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        // Uloží si původní URL fotky, aby po úspěšném nahrání nové byla smazána
-        const oldPhotoUrl = formData.photo_url;
-
-        // Okamžitý lokální náhled (bez čekání na upload)
-        const localPreview = URL.createObjectURL(file);
-        setFormData(prev => ({ ...prev, photo_url: localPreview }));
-        setIsUploading(true);
-
-        try {
-            // Zmenší fotku v telefonu (rychlejší upload, HEIC → JPEG)
-            const resized = await resizeImageForUpload(file);
-            const uploadData = new FormData();
-            uploadData.append("file", resized, "photo.jpg");
-            const response = await api.post("/upload", uploadData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            // Smaže předchozí nahranou fotku ze serveru (fotku uloženého jídla až po uložení)
-            if (oldPhotoUrl && oldPhotoUrl.startsWith("/static/photos/") && oldPhotoUrl !== originalPhotoUrlRef.current) {
-                api.delete("/upload", { data: { url: oldPhotoUrl } }).catch(console.error);
-            }
-
-            const newUrl = response.data.url;
-            uploadedPhotoUrlRef.current = newUrl; // Uloží pro případný cleanup při odchodu
-
-            // Nahradí lokální preview skutečnou URL ze serveru
-            setFormData(prev => ({ ...prev, photo_url: newUrl }));
-        } catch (err: any) {
-            console.error("Chyba při nahrávání fotky:", err);
-            setFormData(prev => ({ ...prev, photo_url: oldPhotoUrl }));
-            const message = err.response?.status === 413
-                ? "Fotka je příliš velká."
-                : err.response?.data?.detail || "Nepodařilo se nahrát fotku. Zkus to znovu.";
-            alert(message);
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (portions.some((p) => !(parseInt(p.weight_grams) > 0))) {
+        if (hasInvalidPortion(portions)) {
             alert("Váha porce musí být větší než 0 g.");
             return;
         }
@@ -192,23 +102,13 @@ export default function AddFood() {
             sugar_per_100g: parseFloat(formData.sugar_per_100g) || 0,
             protein_per_100g: parseFloat(formData.protein_per_100g) || 0,
             salt_per_100g: parseFloat(formData.salt_per_100g) || 0,
-            photo_url: formData.photo_url || null,
-            portions: portions.map((p) => ({
-                id: p.id,
-                name: p.name.trim(),
-                weight_grams: parseInt(p.weight_grams) || 0,
-            })),
+            photo_url: photoUrl || null,
+            portions: toPortionPayload(portions),
         };
 
         try {
             if (isEditMode) {
                 await api.put(`/foods/${id}`, foodValues);
-
-                // Nová fotka je uložená → stará fotka jídla už není potřeba
-                const originalPhotoUrl = originalPhotoUrlRef.current;
-                if (originalPhotoUrl?.startsWith("/static/photos/") && originalPhotoUrl !== formData.photo_url) {
-                    api.delete("/upload", { data: { url: originalPhotoUrl } }).catch(console.error);
-                }
             } else {
                 await api.post("/foods/", {
                     ...foodValues,
@@ -217,8 +117,8 @@ export default function AddFood() {
                 });
             }
 
-            // Fotka patří k uloženému jídlu → cleanup ji při odchodu nesmí smazat
-            isSubmittedRef.current = true;
+            // Fotka patří k uloženému jídlu (a případná stará se smaže)
+            commitPhoto();
             if (isEditMode) {
                 navigate(-1);
             } else {
@@ -259,51 +159,7 @@ export default function AddFood() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 pb-12 max-w-md mx-auto w-full">
 
                 {/* Přidání fotky */}
-                <div className="flex justify-center mt-2">
-                    {/* Skrytý file input – iOS ukáže volbu foťák/galerie */}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePhotoChange}
-                    />
-
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-28 h-28 rounded-[2rem] overflow-hidden bg-surface shadow-sm border-2 border-dashed border-brand/40 flex flex-col items-center justify-center text-brand hover:bg-brand/10 active:scale-95 transition-all relative"
-                    >
-                        {formData.photo_url ? (
-                            // Náhled fotky
-                            <>
-                                <img
-                                    src={formData.photo_url}
-                                    alt="Náhled"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Overlay při uploadu */}
-                                {isUploading && (
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                )}
-                                {/* Ikonka pro změnu */}
-                                {!isUploading && (
-                                    <div className="absolute bottom-1.5 right-1.5 bg-black/50 rounded-full p-1">
-                                        <Camera size={12} className="text-white" />
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            // Placeholder
-                            <>
-                                <Camera size={32} strokeWidth={1.5} className="mb-1" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Fotka</span>
-                            </>
-                        )}
-                    </button>
-                </div>
+                <PhotoPicker photoUrl={photoUrl} isUploading={isUploading} onSelectFile={uploadPhoto} />
 
                 {/* Základní informace */}
                 <div className="flex flex-col gap-1.5">
@@ -354,49 +210,7 @@ export default function AddFood() {
                 </div>
 
                 {/* Porce (kus, balení...) */}
-                <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted ml-4 uppercase tracking-wider">Porce</label>
-                    <div className="bg-surface rounded-3xl overflow-hidden shadow-sm">
-                        {portions.map((portion) => (
-                            <div key={portion.key} className="flex items-center gap-3 p-4 border-b border-surface-hover">
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="Název (např. kus)"
-                                    value={portion.name}
-                                    onChange={(e) => updatePortion(portion.key, "name", e.target.value)}
-                                    className="flex-1 min-w-0 bg-transparent text-text-main font-semibold focus:outline-none placeholder-text-muted/50"
-                                />
-                                <input
-                                    required
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="0"
-                                    value={portion.weight_grams}
-                                    onChange={(e) => updatePortion(portion.key, "weight_grams", e.target.value)}
-                                    className="w-16 text-right bg-transparent text-brand font-bold focus:outline-none placeholder-text-muted/50"
-                                />
-                                <span className="text-sm font-semibold text-text-muted">g</span>
-                                <button
-                                    type="button"
-                                    onClick={() => removePortion(portion.key)}
-                                    className="p-1 text-red-400 active:scale-90 transition-transform"
-                                    aria-label="Odebrat porci"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            onClick={addPortion}
-                            className="w-full flex items-center gap-2 p-4 text-brand font-semibold active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors"
-                        >
-                            <Plus size={18} strokeWidth={2.5} />
-                            Přidat porci
-                        </button>
-                    </div>
-                </div>
+                <PortionsEditor portions={portions} onChange={setPortions} />
 
                 {/* Viditelnost (jen u nového jídla — u existujícího se nemění) */}
                 {!isEditMode && (

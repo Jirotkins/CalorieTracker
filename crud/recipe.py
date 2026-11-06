@@ -2,7 +2,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from models.recipe import Recipe, RecipeIngredient, RecipePortion
 from models.food import Food
-from schemas.recipe import RecipeCreate, RecipeUpdate
+from models.meal_log import MealLog
+from schemas.recipe import RecipeCreate, RecipeUpdate, RecipeIngredientCreate
+from crud.portion import sync_portions
+
+# Klíče maker (odpovídají polím *_per_100g ve Food a Recipe)
+NUTRIENT_KEYS = ("calories", "fat", "saturates", "carbs", "sugar", "protein", "salt")
 
 def get_recipe(session: Session, recipe_id: int) -> Recipe | None:
     """Vrátí konkrétní recept podle ID."""
@@ -15,6 +20,37 @@ def get_user_recipes(session: Session, user_id: int, search: str | None = None) 
         query = query.where(Recipe.name.ilike(f"%{search}%"))
     return list(session.scalars(query).all())
 
+def _replace_ingredients(session: Session, recipe: Recipe, ingredients: list[RecipeIngredientCreate]) -> None:
+    """Nahradí ingredience receptu novým seznamem (neexistující jídla přeskočí)."""
+    # Staré vazby smaže delete-orphan cascade
+    recipe.ingredients.clear()
+
+    for ing_data in ingredients:
+        food = session.get(Food, ing_data.food_id)
+        if not food:
+            continue
+        recipe.ingredients.append(RecipeIngredient(food=food, amount_grams=ing_data.amount_grams))
+
+def _recalculate_macros(recipe: Recipe) -> None:
+    """Spočítá makra receptu na 100 g z ingrediencí a finální váhy (po uvaření)."""
+    totals = dict.fromkeys(NUTRIENT_KEYS, 0.0)
+    total_weight_raw = 0
+
+    # Sečte makra všech ingrediencí podle jejich váhy
+    for ingredient in recipe.ingredients:
+        total_weight_raw += ingredient.amount_grams
+        multiplier = ingredient.amount_grams / 100.0
+        for key in NUTRIENT_KEYS:
+            totals[key] += getattr(ingredient.food, f"{key}_per_100g") * multiplier
+
+    # Pokud jídlo po "upečení" váží jinak, přepočítá se na finální váhu
+    final_weight = recipe.final_weight_grams or total_weight_raw
+    ratio = 100.0 / final_weight if final_weight > 0 else 0.0
+
+    recipe.calories_per_100g = round(totals["calories"] * ratio)
+    for key in NUTRIENT_KEYS[1:]:
+        setattr(recipe, f"{key}_per_100g", round(totals[key] * ratio, 2))
+
 def create_recipe(session: Session, user_id: int, recipe_data: RecipeCreate) -> Recipe:
     """
     Vytvoří nový recept a spočítá makroživiny podle ingrediencí.
@@ -23,84 +59,26 @@ def create_recipe(session: Session, user_id: int, recipe_data: RecipeCreate) -> 
         user_id=user_id,
         name=recipe_data.name,
         photo_url=recipe_data.photo_url,
-        calories_per_100g=0,
-        fat_per_100g=0.0,
-        saturates_per_100g=0.0,
-        carbs_per_100g=0.0,
-        sugar_per_100g=0.0,
-        protein_per_100g=0.0,
-        salt_per_100g=0.0
+        final_weight_grams=recipe_data.final_weight_grams,
     )
     session.add(new_recipe)
-    # Flush() pro získání ID nového receptu
-    session.flush()
 
-    total_weight_raw = 0
-    total_cal = 0
-    total_fat = 0.0
-    total_sat = 0.0
-    total_carb = 0.0
-    total_sug = 0.0
-    total_prot = 0.0
-    total_salt = 0.0
-
-    # Projde všechny ingredience od uživatele
-    for ing_data in recipe_data.ingredients:
-        food = session.get(Food, ing_data.food_id)
-        if not food:
-            continue
-
-        # Vytvoří záznam o ingredienci (M:N)
-        recipe_ing = RecipeIngredient(
-            recipe_id=new_recipe.id,
-            food_id=food.id,
-            amount_grams=ing_data.amount_grams
-        )
-        session.add(recipe_ing)
-        # Přičte váhy ingredience do celkové váhy
-        total_weight_raw += ing_data.amount_grams
-        # Spočítá makroživiny a vynásobí podle váhy ingredience
-        multiplier = ing_data.amount_grams / 100.0
-        total_cal += int(food.calories_per_100g * multiplier)
-        total_fat += food.fat_per_100g * multiplier
-        total_sat += food.saturates_per_100g * multiplier
-        total_carb += food.carbs_per_100g * multiplier
-        total_sug += food.sugar_per_100g * multiplier
-        total_prot += food.protein_per_100g * multiplier
-        total_salt += food.salt_per_100g * multiplier
-
-    # Přepočítá finální váhu pokud po "upečení" má jídlo jinou váhu
-    final_weight = recipe_data.final_weight_grams if recipe_data.final_weight_grams else total_weight_raw
-    # Hodnoty na 100g jídla
-    if final_weight > 0:
-        ratio = 100.0 / final_weight
-
-        new_recipe.calories_per_100g = int(total_cal * ratio)
-        new_recipe.fat_per_100g = round(total_fat * ratio, 2)
-        new_recipe.saturates_per_100g = round(total_sat * ratio, 2)
-        new_recipe.carbs_per_100g = round(total_carb * ratio, 2)
-        new_recipe.sugar_per_100g = round(total_sug * ratio, 2)
-        new_recipe.protein_per_100g = round(total_prot * ratio, 2)
-        new_recipe.salt_per_100g = round(total_salt * ratio, 2)
+    _replace_ingredients(session, new_recipe, recipe_data.ingredients)
+    _recalculate_macros(new_recipe)
 
     # Rozdělení podle porcí
     for portion_data in recipe_data.portions:
-        new_portion = RecipePortion(
-            recipe_id=new_recipe.id,
-            name=portion_data.name,
-            weight_grams=portion_data.weight_grams
-        )
-        session.add(new_portion)
+        new_recipe.portions.append(RecipePortion(name=portion_data.name, weight_grams=portion_data.weight_grams))
 
     session.commit()
     session.refresh(new_recipe)
-    
+
     return new_recipe
 
 def update_recipe(session: Session, recipe_id: int, recipe_data: RecipeUpdate) -> Recipe | None:
-    """Upraví existující recept. Pokud přijdou nové ingredience nebo váha, musí přepočítat makra."""
-    recipe = session.get(Recipe, recipe_id)
-    if not recipe:
+    """Upraví existující recept. Při změně ingrediencí nebo váhy přepočítá makra."""
+    recipe = get_recipe(session, recipe_id)
+    if not recipe or recipe.is_deleted:
         return None
 
     # Změna jména nebo fotky
@@ -109,60 +87,22 @@ def update_recipe(session: Session, recipe_id: int, recipe_data: RecipeUpdate) -
     if recipe_data.photo_url is not None:
         recipe.photo_url = recipe_data.photo_url
 
-    # Staré ingredience se musí smazat a nahradit novými
+    # Finální váhu jde i smazat (null = počítat se součtem ingrediencí)
+    needs_recalculation = False
+    if "final_weight_grams" in recipe_data.model_fields_set:
+        recipe.final_weight_grams = recipe_data.final_weight_grams
+        needs_recalculation = True
+
+    # Ingredience se nahradí novými (přepočet zároveň zohlední aktuální makra jídel)
     if recipe_data.ingredients is not None:
-        # Vymaže staré vazby z databáze
-        for old_ing in recipe.ingredients:
-            session.delete(old_ing)
-        
-        session.flush()
+        _replace_ingredients(session, recipe, recipe_data.ingredients)
+        needs_recalculation = True
 
-        total_weight_raw = 0
-        total_cal = 0
-        total_fat = 0.0
-        total_sat = 0.0
-        total_carb = 0.0
-        total_sug = 0.0
-        total_prot = 0.0
-        total_salt = 0.0
+    if needs_recalculation:
+        _recalculate_macros(recipe)
 
-        for ing_data in recipe_data.ingredients:
-            food = session.get(Food, ing_data.food_id)
-            if not food:
-                continue
-
-            # Přidá novou ingredienci
-            recipe_ing = RecipeIngredient(
-                recipe_id=recipe.id,
-                food_id=food.id,
-                amount_grams=ing_data.amount_grams
-            )
-            session.add(recipe_ing)
-            
-            total_weight_raw += ing_data.amount_grams
-            multiplier = ing_data.amount_grams / 100.0
-            
-            total_cal += int(food.calories_per_100g * multiplier)
-            total_fat += food.fat_per_100g * multiplier
-            total_sat += food.saturates_per_100g * multiplier
-            total_carb += food.carbs_per_100g * multiplier
-            total_sug += food.sugar_per_100g * multiplier
-            total_prot += food.protein_per_100g * multiplier
-            total_salt += food.salt_per_100g * multiplier
-
-        # Určí finální váhu
-        final_weight = recipe_data.final_weight_grams if recipe_data.final_weight_grams else total_weight_raw
-        
-        # Znovu naplní makra u receptu
-        if final_weight > 0:
-            ratio = 100.0 / final_weight
-            recipe.calories_per_100g = int(total_cal * ratio)
-            recipe.fat_per_100g = round(total_fat * ratio, 2)
-            recipe.saturates_per_100g = round(total_sat * ratio, 2)
-            recipe.carbs_per_100g = round(total_carb * ratio, 2)
-            recipe.sugar_per_100g = round(total_sug * ratio, 2)
-            recipe.protein_per_100g = round(total_prot * ratio, 2)
-            recipe.salt_per_100g = round(total_salt * ratio, 2)
+    if recipe_data.portions is not None:
+        sync_portions(session, recipe.portions, recipe_data.portions, RecipePortion, MealLog.recipe_portion_id)
 
     session.commit()
     session.refresh(recipe)
