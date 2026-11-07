@@ -86,6 +86,16 @@ def get_logs_by_date(session: Session, user_id: int, target_date: date) -> list[
     return list(session.scalars(query).all())
 
 
+def get_logs_in_range(session: Session, user_id: int, start: date, end: date) -> list[MealLog]:
+    """Vrátí všechna jídla snědená v rozsahu dní (včetně obou krajních dní)."""
+    query = select(MealLog).where(
+        MealLog.user_id == user_id,
+        func.date(MealLog.date_consumed) >= start,
+        func.date(MealLog.date_consumed) <= end,
+    )
+    return list(session.scalars(query).all())
+
+
 def get_frequent_foods(session: Session, user_id: int, limit: int = 5) -> list[Food]:
     """Vrátí nejčástěji logovaná jídla daného uživatele pro 'quick pick' UI.
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CircularProgress } from "../components/ui/CircularProgress";
 import { MacroOverview } from "../components/ui/MacroOverview";
 import { DailyMealLog } from "../components/ui/DailyMealLog";
@@ -7,6 +8,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useDailySummary } from "../hooks/useDailySummary";
 import { type DailyNutrition } from "../types/nutrition";
 import { type DailySummary } from "../types/meal";
+import { parseLocalDate } from "../utils/date";
 
 // Adaptér: převede DailySummary z API na formát který čekají komponenty CircularProgress a MacroOverview
 function toNutritionData(summary: DailySummary): DailyNutrition {
@@ -22,7 +24,14 @@ function toNutritionData(summary: DailySummary): DailyNutrition {
 }
 
 export default function Dashboard() {
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    // ?date=YYYY-MM-DD otevře konkrétní den (např. proklik ze statistik)
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [selectedDate, setSelectedDate] = useState<Date>(() => parseLocalDate(searchParams.get("date")) ?? new Date());
+
+    // Parametr se použije jen jednou → po obnovení stránky se ukáže zase dnešek
+    useEffect(() => {
+        if (searchParams.has("date")) setSearchParams({}, { replace: true });
+    }, [searchParams, setSearchParams]);
     // Zvýšení refreshKey vynutí nový fetch v useDailySummary bez změny data
     const [refreshKey, setRefreshKey] = useState(0);
     const { user } = useAuth();

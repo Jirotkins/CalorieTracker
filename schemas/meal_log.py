@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
-from datetime import datetime
+from datetime import datetime, date
 
 # Povolené typy jídel dne (stejné pořadí jako v UI)
 MealType = Literal["breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner"]
@@ -89,5 +89,33 @@ class DailySummary(BaseModel):
     
     # Seznam záznamů (celých bloků podle typu jídla - "snídaně/oběd")
     meal_groups: list[MealGroupSummary] = []
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+# Součty jednoho dne pro statistiky
+class DayStats(BaseModel):
+    day: date
+    # Počet záznamů v deníčku (0 = den bez zápisu → nezapočítává se do průměrů)
+    log_count: int = 0
+    calories: int = 0
+    fat: float = 0.0
+    saturates: float = 0.0
+    carbs: float = 0.0
+    sugar: float = 0.0
+    protein: float = 0.0
+    salt: float = 0.0
+
+# Odpověď GET /logs/stats — každý den v rozsahu (i prázdný) + aktuální cíle
+class StatsResponse(BaseModel):
+    start: date
+    end: date
+
+    goal_calories: int
+    goal_protein: float
+    goal_carbs: float
+    goal_fat: float
+    goal_saturates: float
+    goal_sugar: float
+    goal_salt: float
+
+    days: list[DayStats] = []

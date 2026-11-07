@@ -3,6 +3,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Foods from './pages/Foods'
 import Settings from './pages/Settings'
+import Stats from './pages/Stats'
 import AddFood from './pages/AddFood'
 import BarcodeScanner from './pages/BarcodeScanner'
 import FoodDetail from './pages/FoodDetail'
@@ -25,6 +26,7 @@ export default function App() {
           <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
             <Route path='/dashboard' element={<Dashboard />} />
             <Route path='/foods' element={<Foods />} />
+            <Route path='/stats' element={<Stats />} />
             <Route path='/settings' element={<Settings />} />
           </Route>
 

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, Apple, Settings } from "lucide-react";
+import { Home, Apple, BarChart3, Settings } from "lucide-react";
 
 export function BottomNav() {
     // Automaticky obarví ikonu aktivní stránky
@@ -19,6 +19,10 @@ export function BottomNav() {
                 <NavLink to="/foods" className={navItemClasses}>
                     <Apple size={22} strokeWidth={2.5} />
                     <span className="text-[10px] font-semibold">Jídla</span>
+                </NavLink>
+                <NavLink to="/stats" className={navItemClasses}>
+                    <BarChart3 size={22} strokeWidth={2.5} />
+                    <span className="text-[10px] font-semibold">Statistiky</span>
                 </NavLink>
                 <NavLink to="/settings" className={navItemClasses}>
                     <Settings size={22} strokeWidth={2.5} />
