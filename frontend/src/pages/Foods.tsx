@@ -23,38 +23,42 @@ export default function Foods() {
     // Po uložení/smazání receptu se vrací rovnou na záložku Recepty
     const [activeTab, setActiveTab] = useState<Tab>(location.state?.tab ?? "global");
     const [searchQuery, setSearchQuery] = useState("");
-    const [foods, setFoods] = useState<Food[]>([]);
-    const [recipes, setRecipes] = useState<Recipe[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    // Poslední načtený seznam + záložka, ke které patří (jiná záložka = zatím nic k zobrazení)
+    const [result, setResult] = useState<{ tab: Tab; items: (Food | Recipe)[] } | null>(null);
+    // Od začátku true → hned skeleton, ne "Nic jsme nenašli"
+    const [isLoading, setIsLoading] = useState(true);
 
     // Získá data z API podle toho, v jaké je uživatel záložce a co je napsáno v hledání
     useEffect(() => {
+        // Odpověď na už neaktuální záložku/hledání (rychlé přepínání, psaní) se zahodí
+        let isCancelled = false;
+        setIsLoading(true);
+
         const fetchFoods = async () => {
-            setIsLoading(true);
             try {
                 // Přibalí vyhledávací text, pokud nějaký je
                 const params = searchQuery ? { search: searchQuery } : {};
 
                 const response = await api.get(TAB_ENDPOINTS[activeTab], { params });
-                if (activeTab === "recipes") {
-                    setRecipes(response.data);
-                } else {
-                    setFoods(response.data);
-                }
+                if (!isCancelled) setResult({ tab: activeTab, items: response.data });
             } catch (error) {
                 console.error("Chyba při načítání jídel:", error);
             } finally {
-                setIsLoading(false);
+                if (!isCancelled) setIsLoading(false);
             }
         };
 
-        // Zpoždění 300ms po dopsání písmena
-        const delayTimer = setTimeout(() => {
-            fetchFoods();
-        }, 300);
+        // Zpoždění 300ms jen při psaní do hledání (otevření stránky a přepnutí záložky hned)
+        const delayTimer = setTimeout(fetchFoods, searchQuery ? 300 : 0);
 
-        return () => clearTimeout(delayTimer);
+        return () => {
+            isCancelled = true;
+            clearTimeout(delayTimer);
+        };
     }, [activeTab, searchQuery]);
+
+    // Při psaní zůstane vidět předchozí výsledek aktuální záložky, dokud nepřijde nový
+    const items = result?.tab === activeTab ? result.items : null;
 
     return (
         <main className="w-full p-4 flex flex-col gap-6 max-w-md mx-auto mt-4 pb-24">
@@ -83,9 +87,9 @@ export default function Foods() {
 
             {/* Výpis načtených jídel */}
             <div className="flex flex-col gap-3">
-                {isLoading ? (
+                {items === null || (isLoading && items.length === 0) ? (
                     <CardListSkeleton />
-                ) : (activeTab === "recipes" ? recipes.length : foods.length) === 0 ? (
+                ) : items.length === 0 ? (
                     <div className="text-center mt-10 bg-surface border border-surface-hover p-6 rounded-3xl">
                         <p className="text-text-main font-medium">Nic jsme nenašli</p>
                         <p className="text-text-muted text-sm mt-1">
@@ -95,11 +99,11 @@ export default function Foods() {
                         </p>
                     </div>
                 ) : activeTab === "recipes" ? (
-                    recipes.map(recipe => (
+                    (items as Recipe[]).map(recipe => (
                         <FoodCard key={recipe.id} food={recipe} to={`/recipes/${recipe.id}`} isRecipe />
                     ))
                 ) : (
-                    foods.map(food => (
+                    (items as Food[]).map(food => (
                         <FoodCard key={food.id} food={food} to={`/foods/${food.id}`} />
                     ))
                 )}
