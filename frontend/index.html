@@ -4,8 +4,32 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <!-- viewport-fit=cover: obsah jde až pod výřez/status bar, odsazení řeší env(safe-area-inset-*) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>CalorieTracker</title>
+
+  <!-- iOS: ikona na ploše a režim bez lišt Safari -->
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="CalTrack" />
+  <!-- "default": status bar nad obsahem; jeho barvu řídí theme-color (black-translucent by měl ve světlém režimu bílé hodiny na světlém pozadí) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+  <!-- Barva status baru / lišty prohlížeče — přepíná ji useTheme podle zvoleného motivu -->
+  <meta name="theme-color" content="#e7e8e9" />
+
+  <!-- Motiv ještě před vykreslením Reactu: bez probliknutí a i na stránkách bez přepínače (logika jako v useTheme) -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark');
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#1c1e22' : '#e7e8e9');
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>

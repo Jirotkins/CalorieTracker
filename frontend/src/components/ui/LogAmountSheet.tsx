@@ -9,6 +9,7 @@ import { type Food, type FoodPortion } from "../../types/food";
 import { type LogItemResponse, MEAL_TYPES, MEAL_LABELS } from "../../types/meal";
 import { toLocalDateString } from "../../utils/date";
 import { formatAmount } from "../../utils/number";
+import { useToast } from "../../hooks/useToast";
 
 // Minimum, které sheet potřebuje pro živý přepočet (splňuje ho Food i Recipe)
 export type LoggableItem = Pick<Food, "id" | "name" | "calories_per_100g" | "protein_per_100g" | "carbs_per_100g" | "fat_per_100g" | "portions">;
@@ -64,6 +65,7 @@ export function LogAmountSheet({ isOpen, food, isRecipe: isNewRecipe = false, me
     // První klik na "Smazat" jen žádá o potvrzení
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { showToast } = useToast();
 
     const isEditing = !!existingLog;
     const portions = food?.portions ?? [];
@@ -158,6 +160,7 @@ export function LogAmountSheet({ isOpen, food, isRecipe: isNewRecipe = false, me
                     date_consumed: toLocalDateString(selectedDate),
                 });
             }
+            showToast(isEditing ? "Změny uloženy" : "Zalogováno");
             onLogAdded();
         } catch {
             setError(isEditing ? "Nepodařilo se uložit změny. Zkus to znovu." : "Nepodařilo se zalogovat. Zkus to znovu.");
@@ -178,6 +181,7 @@ export function LogAmountSheet({ isOpen, food, isRecipe: isNewRecipe = false, me
 
         try {
             await api.delete(`/logs/${existingLog.id}`);
+            showToast("Záznam smazán");
             onLogAdded();
         } catch {
             setError("Nepodařilo se smazat záznam. Zkus to znovu.");

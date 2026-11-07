@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "../services/api";
 import { resizeImageForUpload } from "../utils/image";
+import { useToast } from "./useToast";
 
 // Jen fotky nahrané na náš server jde mazat (OFF fotky jsou externí odkazy)
 function isLocalPhoto(url: string | null | undefined): url is string {
@@ -14,6 +15,7 @@ function isLocalPhoto(url: string | null | undefined): url is string {
 export function usePhotoUpload(initialUrl: string = "") {
     const [photoUrl, setPhotoUrl] = useState(initialUrl);
     const [isUploading, setIsUploading] = useState(false);
+    const { showToast } = useToast();
 
     // Pro sledování, zda má fotku smazat při opuštění stránky
     const uploadedPhotoUrlRef = useRef<string | null>(null);
@@ -71,7 +73,7 @@ export function usePhotoUpload(initialUrl: string = "") {
             const message = err.response?.status === 413
                 ? "Fotka je příliš velká."
                 : err.response?.data?.detail || "Nepodařilo se nahrát fotku. Zkus to znovu.";
-            alert(message);
+            showToast(message, "error");
         } finally {
             setIsUploading(false);
         }

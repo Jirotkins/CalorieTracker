@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import { type Food } from "../types/food";
 import { type Recipe } from "../types/recipe";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
+import { useToast } from "../hooks/useToast";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
 import { PortionsEditor } from "../components/ui/PortionsEditor";
 import { type PortionRow, toPortionRows, toPortionPayload, hasInvalidPortion } from "../utils/portions";
@@ -26,6 +27,7 @@ const PREVIEW_KEYS = ["calories", "protein", "carbs", "fat"] as const;
 // Stránka pro nový recept (/recipes/new) i úpravu existujícího (/recipes/:id/edit)
 export default function RecipeForm() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const { id } = useParams();
     const isEditMode = !!id;
 
@@ -60,10 +62,10 @@ export default function RecipeForm() {
             })
             .catch((error) => {
                 console.error("Chyba při načítání receptu:", error);
-                alert("Nepodařilo se načíst recept.");
+                showToast("Nepodařilo se načíst recept.", "error");
                 navigate(-1);
             });
-    }, [id, isEditMode, navigate, setOriginalPhoto]);
+    }, [id, isEditMode, navigate, setOriginalPhoto, showToast]);
 
     // Ingredience: přidání (ze sheetu), změna gramů, odebrání
     const addIngredient = (food: Food) => {
@@ -92,15 +94,15 @@ export default function RecipeForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (ingredients.length === 0) {
-            alert("Přidej aspoň jednu ingredienci.");
+            showToast("Přidej aspoň jednu ingredienci.", "error");
             return;
         }
         if (ingredients.some((ing) => !(parseInt(ing.amount_grams) > 0))) {
-            alert("Množství ingredience musí být větší než 0 g.");
+            showToast("Množství ingredience musí být větší než 0 g.", "error");
             return;
         }
         if (hasInvalidPortion(portions)) {
-            alert("Váha porce musí být větší než 0 g.");
+            showToast("Váha porce musí být větší než 0 g.", "error");
             return;
         }
         setIsSaving(true);
@@ -120,16 +122,18 @@ export default function RecipeForm() {
             if (isEditMode) {
                 await api.put(`/recipes/${id}`, recipeValues);
                 commitPhoto();
+                showToast("Změny uloženy");
                 navigate(-1);
             } else {
                 const response = await api.post<Recipe>("/recipes/", recipeValues);
                 commitPhoto();
+                showToast("Recept uložen");
                 // Po vytvoření rovnou detail receptu (zpět vede do seznamu receptů, ne do formuláře)
                 navigate(`/recipes/${response.data.id}`, { replace: true });
             }
         } catch (error) {
             console.error("Chyba při ukládání receptu:", error);
-            alert("Nepodařilo se uložit recept.");
+            showToast("Nepodařilo se uložit recept.", "error");
         } finally {
             setIsSaving(false);
         }
@@ -138,7 +142,7 @@ export default function RecipeForm() {
     return (
         <>
             <main className="w-full flex flex-col min-h-screen bg-surface-hover">
-                <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[env(safe-area-inset-top,1rem)]">
+                <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[calc(1rem+env(safe-area-inset-top))]">
                     <button type="button" onClick={() => navigate(-1)} className="p-2 -ml-2 text-brand">
                         <ChevronLeft size={28} />
                     </button>

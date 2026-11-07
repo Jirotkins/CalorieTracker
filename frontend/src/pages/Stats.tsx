@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import { type StatsResponse, type DayStats } from "../types/stats";
 import { Tabs } from "../components/ui/Tabs";
 import { CaloriesBarChart } from "../components/ui/CaloriesBarChart";
+import { Skeleton } from "../components/ui/Skeleton";
 import { toLocalDateString, parseLocalDate, addDays, startOfWeek } from "../utils/date";
 import { formatAmount } from "../utils/number";
 
@@ -129,8 +130,16 @@ export default function Stats() {
                 </button>
             </div>
 
+            {/* Skeleton ve tvaru grafu, dlaždic a maker */}
             {isLoading && (
-                <p className="text-center text-text-muted animate-pulse py-10">Načítám statistiky...</p>
+                <>
+                    <Skeleton className="h-72 rounded-3xl" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <Skeleton className="h-28 rounded-3xl" />
+                        <Skeleton className="h-28 rounded-3xl" />
+                    </div>
+                    <Skeleton className="h-64 rounded-3xl" />
+                </>
             )}
             {error && (
                 <p className="text-center text-red-400 py-10">{error}</p>

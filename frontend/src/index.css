@@ -88,3 +88,20 @@ body {
 .animate-laser {
     animation: laser 3s ease-in-out infinite;
 }
+
+/* Toast: krátké vyjetí shora */
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.toast-enter {
+    animation: toast-in 0.2s ease-out;
+}

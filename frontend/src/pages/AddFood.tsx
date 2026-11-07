@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { api } from "../services/api";
 import { type Food } from "../types/food";
 import { usePhotoUpload } from "../hooks/usePhotoUpload";
+import { useToast } from "../hooks/useToast";
 import { NutrientRow } from "../components/ui/NutrientRow";
 import { Switch } from "../components/ui/Switch";
 import { PhotoPicker } from "../components/ui/PhotoPicker";
@@ -30,6 +31,7 @@ function toFormData(source?: Partial<Food>) {
 // Stránka pro přidání nového jídla (/foods/new) i úpravu existujícího (/foods/:id/edit)
 export default function AddFood() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const location = useLocation();
     const { id } = useParams();
     const isEditMode = !!id;
@@ -56,10 +58,10 @@ export default function AddFood() {
             })
             .catch((error) => {
                 console.error("Chyba při načítání jídla:", error);
-                alert("Nepodařilo se načíst jídlo.");
+                showToast("Nepodařilo se načíst jídlo.", "error");
                 navigate(-1);
             });
-    }, [id, isEditMode, navigate, setOriginalPhoto]);
+    }, [id, isEditMode, navigate, setOriginalPhoto, showToast]);
 
     // Univerzální handler pro změnu inputů
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +90,7 @@ export default function AddFood() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (hasInvalidPortion(portions)) {
-            alert("Váha porce musí být větší než 0 g.");
+            showToast("Váha porce musí být větší než 0 g.", "error");
             return;
         }
         setIsLoading(true);
@@ -119,6 +121,7 @@ export default function AddFood() {
 
             // Fotka patří k uloženému jídlu (a případná stará se smaže)
             commitPhoto();
+            showToast(isEditMode ? "Změny uloženy" : "Jídlo uloženo");
             if (isEditMode) {
                 navigate(-1);
             } else {
@@ -126,7 +129,7 @@ export default function AddFood() {
             }
         } catch (error) {
             console.error("Chyba při ukládání jídla:", error);
-            alert("Nepodařilo se uložit jídlo.");
+            showToast("Nepodařilo se uložit jídlo.", "error");
         } finally {
             setIsLoading(false);
         }
@@ -145,7 +148,7 @@ export default function AddFood() {
 
     return (
         <main className="w-full flex flex-col min-h-screen bg-surface-hover">
-            <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[env(safe-area-inset-top,1rem)]">
+            <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[calc(1rem+env(safe-area-inset-top))]">
                 <button type="button" onClick={() => navigate(-1)} className="p-2 -ml-2 text-brand">
                     <ChevronLeft size={28} />
                 </button>

@@ -82,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Funkce pro odhlášení
     const logout = () => {
         localStorage.removeItem('token');
+        // Data z API uložená pro offline režim nesmí zůstat dalšímu uživateli
+        if ('caches' in window) caches.delete('api-cache').catch(console.error);
         setToken(null);
         setUser(null);
     };

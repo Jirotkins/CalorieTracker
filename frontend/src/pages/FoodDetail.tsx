@@ -1,12 +1,14 @@
 import { useNavigate, useLocation, useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { api } from "../services/api"
+import { useToast } from "../hooks/useToast"
 import { type Food } from "../types/food"
 import { ChevronLeft, Utensils, MoreVertical, Pencil, Trash2, Tag, ShoppingBag } from "lucide-react"
 import { ActionSheet } from "../components/ui/ActionSheet"
 
 export default function FoodDetail() {
     const navigate = useNavigate()
+    const { showToast } = useToast()
     const { id } = useParams()
     const location = useLocation()
 
@@ -27,6 +29,7 @@ export default function FoodDetail() {
     const handleDelete = async () => {
         if (!confirm(`Opravdu smazat "${food?.name}"?`)) return
         await api.delete(`/foods/${food?.id}`)
+        showToast("Jídlo smazáno")
         navigate("/foods")
     }
 
@@ -49,7 +52,7 @@ export default function FoodDetail() {
             <main className="w-full flex flex-col min-h-screen bg-surface-hover">
 
                 {/* Header */}
-                <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[env(safe-area-inset-top,1rem)]">
+                <header className="flex items-center justify-between p-4 bg-surface sticky top-0 z-20 shadow-sm pt-[calc(1rem+env(safe-area-inset-top))]">
                     <button type="button" onClick={() => navigate(-1)} className="p-2 -ml-2 text-brand">
                         <ChevronLeft size={28} />
                     </button>

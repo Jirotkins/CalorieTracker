@@ -4,6 +4,7 @@ import { CircularProgress } from "../components/ui/CircularProgress";
 import { MacroOverview } from "../components/ui/MacroOverview";
 import { DailyMealLog } from "../components/ui/DailyMealLog";
 import { DateStepper } from "../components/ui/DateStepper";
+import { Skeleton } from "../components/ui/Skeleton";
 import { useAuth } from "../hooks/useAuth";
 import { useDailySummary } from "../hooks/useDailySummary";
 import { type DailyNutrition } from "../types/nutrition";
@@ -49,16 +50,22 @@ export default function Dashboard() {
 
             <DateStepper date={selectedDate} onChange={setSelectedDate} />
 
-            {/* Stavy načítání a chyby */}
-            {isLoading && (
-                <p className="text-center text-text-muted animate-pulse py-10">Načítám data...</p>
+            {/* Skeleton jen při změně dne — po zalogování zůstanou vidět stará data, než přijdou nová */}
+            {isLoading && !data && (
+                <>
+                    <div className="flex justify-center my-4">
+                        <Skeleton className="w-[200px] h-[200px] rounded-full" />
+                    </div>
+                    <Skeleton className="h-56 rounded-3xl" />
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 rounded-3xl mt-4" />)}
+                </>
             )}
             {error && (
                 <p className="text-center text-red-400 py-10">{error}</p>
             )}
 
             {/* Reálná data z API */}
-            {data && !isLoading && (
+            {data && (
                 <>
                     {/* Hlavní kolečko pro kalorie */}
                     <div className="flex justify-center my-4">

@@ -42,10 +42,41 @@ export default defineConfig({
         display: 'standalone', // Skrytí lišt prohlížeče
         scope: '/', // Podstránky patří do aplikace
         start_url: '/',
+        lang: 'cs',
         icons: [
-          // Ikony později
+          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          // Android si ikonu ořízne do svého tvaru (jablko je v bezpečné zóně)
+          { src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ]
-      }
+      },
+      workbox: {
+        // SPA fallback nesmí přebít API, Swagger (/api/docs) ani fotky
+        navigateFallbackDenylist: [/^\/api/, /^\/static/],
+        runtimeCaching: [
+          {
+            // Data z API: vždy zkusí síť, bez signálu vrátí poslední uloženou odpověď (jen čtení)
+            urlPattern: ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
+            // Nahrané fotky se nemění (každá má unikátní název) → stačí je stáhnout jednou
+            urlPattern: ({ url }) => url.pathname.startsWith('/static/photos/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'photo-cache',
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+        ],
+      },
     })
   ],
 })

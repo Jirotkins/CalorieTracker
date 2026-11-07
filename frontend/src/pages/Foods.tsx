@@ -7,6 +7,7 @@ import { FoodCard } from "../components/ui/FoodCard";
 import { AddFoodMenu } from "../components/ui/AddFoodMenu";
 import { SearchBar } from "../components/ui/SearchBar";
 import { Tabs } from "../components/ui/Tabs";
+import { CardListSkeleton } from "../components/ui/Skeleton";
 
 type Tab = "global" | "my" | "recipes";
 
@@ -83,7 +84,7 @@ export default function Foods() {
             {/* Výpis načtených jídel */}
             <div className="flex flex-col gap-3">
                 {isLoading ? (
-                    <p className="text-center text-text-muted mt-10 animate-pulse">Načítám z databáze...</p>
+                    <CardListSkeleton />
                 ) : (activeTab === "recipes" ? recipes.length : foods.length) === 0 ? (
                     <div className="text-center mt-10 bg-surface border border-surface-hover p-6 rounded-3xl">
                         <p className="text-text-main font-medium">Nic jsme nenašli</p>

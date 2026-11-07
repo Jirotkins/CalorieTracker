@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../hooks/useToast";
 import { type User } from "../context/AuthContext";
 import { api } from "../services/api";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
@@ -33,6 +34,7 @@ const GOALS: GoalConfig[] = [
 
 export default function Settings() {
     const { user, logout, refreshUser } = useAuth();
+    const { showToast } = useToast();
 
     // Právě upravovaný cíl (null = sheet zavřený)
     const [editingGoal, setEditingGoal] = useState<GoalConfig | null>(null);
@@ -65,6 +67,7 @@ export default function Settings() {
             await api.put("/users/me", { [editingGoal.key]: newValue });
             await refreshUser();
             setIsSheetOpen(false);
+            showToast("Cíl uložen");
         } catch {
             setError("Nepodařilo se uložit cíl. Zkus to znovu.");
         } finally {

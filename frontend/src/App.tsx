@@ -11,12 +11,14 @@ import RecipeDetail from './pages/RecipeDetail'
 import RecipeForm from './pages/RecipeForm'
 
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './components/ui/ToastProvider'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { MainLayout } from './components/layout/MainLayout'
 
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
           {/* Veřejná routa */}
@@ -41,6 +43,7 @@ export default function App() {
 
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   )
 }
