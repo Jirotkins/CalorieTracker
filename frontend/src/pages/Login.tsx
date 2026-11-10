@@ -12,7 +12,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false); // Načítací kolečko
     const [error, setError] = useState('');
-    const { login, isAuthenticated } = useAuth();
+    const { login, isAuthenticated, isLoading: isAuthLoading } = useAuth();
     const navigate = useNavigate();
 
     // Logika přihlašování
@@ -47,6 +47,11 @@ export default function Login() {
 
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
+    }
+
+    // Token je, jen se ještě ověřuje → neukazovat na chvíli přihlašovací formulář
+    if (isAuthLoading) {
+        return <main className="min-h-dvh" />;
     }
 
 

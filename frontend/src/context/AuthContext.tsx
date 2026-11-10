@@ -28,34 +28,52 @@ interface AuthContextType {
 // Vytvoření Contextu
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Profil uložený z minula — díky němu je appka po spuštění hned přihlášená
+// a nečeká na odpověď /users/me (na iPhonu při studeném startu i 2 s)
+function loadCachedUser(): User | null {
+    try {
+        const raw = localStorage.getItem('user');
+        return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+        return null;
+    }
+}
+
 // Provider komponenta, která obalí celou aplikaci
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+    const [user, setUserState] = useState<User | null>(() => (token ? loadCachedUser() : null));
+    // Čeká se jen tehdy, když je token, ale ještě nemáme uložený profil
+    const [isLoading, setIsLoading] = useState<boolean>(() => !!token && !user);
 
-    // Načtení dat o uživateli z backendu
+    // Nastaví uživatele a zároveň ho uloží pro příští spuštění
+    const setUser = (newUser: User | null) => {
+        setUserState(newUser);
+        if (newUser) localStorage.setItem('user', JSON.stringify(newUser));
+        else localStorage.removeItem('user');
+    };
+
+    // Ověření tokenu a načtení aktuálního profilu z backendu (na pozadí)
     const fetchCurrentUser = async () => {
         try {
             const response = await api.get<User>('/users/me');
             setUser(response.data);
-        } catch (error) {
-            // Pokud token neplatí, vymaže ho
+        } catch (error: any) {
             console.error('Chyba při načítání uživatele:', error);
-            logout();
+            // Odhlásí jen neplatný token (401), nebo když nemáme ani uložený profil.
+            // Výpadek sítě s uloženým profilem appku nechá přihlášenou (offline čtení).
+            if (error?.response?.status === 401 || !loadCachedUser()) {
+                logout();
+            }
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Při prvním načtení aplikace zkontroluje, zda má v localStorage token
+    // Při spuštění aplikace ověří token uložený v localStorage
     useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-            setToken(storedToken);
+        if (localStorage.getItem('token')) {
             fetchCurrentUser();
-        } else {
-            setIsLoading(false);
         }
     }, []);
 
@@ -82,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Funkce pro odhlášení
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         // Data z API uložená pro offline režim nesmí zůstat dalšímu uživateli
         if ('caches' in window) caches.delete('api-cache').catch(console.error);
         setToken(null);
